@@ -1,8 +1,10 @@
-package apple.voltskiya.decay;
+package apple.voltskiya.plugin;
 
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public abstract class VoltskiyaModule {
 
@@ -29,10 +31,15 @@ public abstract class VoltskiyaModule {
     }
 
     public File getDataFolder() {
-        File dataFolder = new File(VoltskiyaDecay.get().getDataFolder(), getName().toLowerCase());
+        File dataFolder = new File(VoltskiyaPlugin.get().getDataFolder(), getName().toLowerCase());
         if (!dataFolder.exists()) dataFolder.mkdir();
         return dataFolder;
     }
+
+    public abstract void log(Level level, String message);
+
+    public abstract void setLogger(Logger logger);
+
     @Override
     public int hashCode() {
         return getName().hashCode();
@@ -43,4 +50,5 @@ public abstract class VoltskiyaModule {
         if (obj instanceof VoltskiyaModule) return obj.hashCode() == hashCode();
         return false;
     }
+
 }
