@@ -9,6 +9,7 @@ public class DBNames {
         public static final String MY_STRENGTH = "my_strength";
         public static final String EFFECTIVE_STRENGTH = "effective_strength";
         public static final String OWNER = "owner";
-        static final String PLAYER_BLOCK = "player_block";
+        public static final String WORLD_UUID = "world_uid";
+        public static final String PLAYER_BLOCK = "player_block";
     }
 }

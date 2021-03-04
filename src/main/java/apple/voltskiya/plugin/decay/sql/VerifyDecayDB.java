@@ -23,7 +23,8 @@ public class VerifyDecayDB {
                     "    %s VARCHAR(40) NOT NULL,\n" +
                     "    %s INTEGER     NOT NULL,\n" +
                     "    %s INTEGER     NOT NULL,\n" +
-                    "    %s VARCHAR(36) NOT NULL,\n" +
+                    "    %s NCHAR(36) NOT NULL,\n" +
+                    "    %s NCHAR(36) NOT NULL,\n" +
                     "    PRIMARY KEY (%s,%s,%s)\n",
             DBNames.PlayerBlock.X,
             DBNames.PlayerBlock.Y,
@@ -32,6 +33,7 @@ public class VerifyDecayDB {
             DBNames.PlayerBlock.MY_STRENGTH,
             DBNames.PlayerBlock.EFFECTIVE_STRENGTH,
             DBNames.PlayerBlock.OWNER,
+            DBNames.PlayerBlock.WORLD_UUID,
             DBNames.PlayerBlock.X,
             DBNames.PlayerBlock.Y,
             DBNames.PlayerBlock.Z
