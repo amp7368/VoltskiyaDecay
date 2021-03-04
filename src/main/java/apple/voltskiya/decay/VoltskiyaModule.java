@@ -12,7 +12,7 @@ public abstract class VoltskiyaModule {
     void init() {
     }
 
-    public abstract void enabled();
+    public abstract void enable();
 
     public abstract String getName();
 
@@ -33,7 +33,6 @@ public abstract class VoltskiyaModule {
         if (!dataFolder.exists()) dataFolder.mkdir();
         return dataFolder;
     }
-
     @Override
     public int hashCode() {
         return getName().hashCode();
