@@ -1,7 +1,11 @@
-package apple.voltskiya.decay;
+package apple.voltskiya.plugin;
 
 import co.aikar.commands.PaperCommandManager;
+import net.luckperms.api.LuckPerms;
+import net.luckperms.api.LuckPermsProvider;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 
@@ -16,11 +20,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
-public class VoltskiyaDecay extends JavaPlugin {
-    private static VoltskiyaDecay instance;
+public class VoltskiyaPlugin extends JavaPlugin {
+    private static VoltskiyaPlugin instance;
     private PaperCommandManager commandManager;
     private final List<VoltskiyaModule> modules = new ArrayList<>();
     private final List<String> loadedJars = new ArrayList<>();
+    private @NonNull LuckPerms luckPerms;
 
     @Override
     public void onEnable() {
@@ -71,7 +76,7 @@ public class VoltskiyaDecay extends JavaPlugin {
     }
 
     private void registerModules() {
-        Reflections reflections = new Reflections("apple.voltskiya.decay", new SubTypesScanner(true));
+        Reflections reflections = new Reflections("apple.voltskiya.plugin", new SubTypesScanner(true));
         reflections.getSubTypesOf(VoltskiyaModule.class).forEach(moduleClass -> {
             VoltskiyaModule module;
             try {
@@ -94,7 +99,9 @@ public class VoltskiyaDecay extends JavaPlugin {
 
     private void registerModule(VoltskiyaModule module) {
         modules.add(module);
+        module.setLogger(getLogger());
         module.setEnabled(false);
+        setupLuckPerms();
     }
 
     public void enableModule(VoltskiyaModule module) {
@@ -104,11 +111,28 @@ public class VoltskiyaDecay extends JavaPlugin {
         getLogger().log(Level.INFO, "Enabled Voltskiya Module: " + module.getName());
     }
 
-    public static VoltskiyaDecay get() {
-        return instance;
-    }
-
     private void setupACF() {
         commandManager = new PaperCommandManager(this);
     }
+
+    private void setupLuckPerms() {
+        if (Bukkit.getPluginManager().isPluginEnabled("LuckPerms")) {
+            luckPerms = LuckPermsProvider.get();
+        } else {
+            getLogger().log(Level.WARNING, "LuckPerms is not enabled, some functions may be disabled.");
+        }
+    }
+
+    public static VoltskiyaPlugin get() {
+        return instance;
+    }
+
+    public @NonNull LuckPerms getLuckPerms() {
+        return luckPerms;
+    }
+
+    public PaperCommandManager getCommandManager() {
+        return commandManager;
+    }
+
 }

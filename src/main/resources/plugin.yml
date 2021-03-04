@@ -1,6 +1,6 @@
 name: Decay
 version: 1.0
-main: apple.voltskiya.decay.VoltskiyaDecay
+main: apple.voltskiya.plugin.VoltskiyaPlugin
 api-version: 1.16
 authors: [Nesaak, appleptr16]
 softdepend:
