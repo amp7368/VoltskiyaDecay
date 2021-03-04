@@ -1,9 +1,11 @@
 package apple.voltskiya.plugin;
 
 import co.aikar.commands.PaperCommandManager;
+import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 
@@ -23,7 +25,7 @@ public class VoltskiyaPlugin extends JavaPlugin {
     private PaperCommandManager commandManager;
     private final List<VoltskiyaModule> modules = new ArrayList<>();
     private final List<String> loadedJars = new ArrayList<>();
-    private Object luckPerms;
+    private @NonNull LuckPerms luckPerms;
 
     @Override
     public void onEnable() {
@@ -113,6 +115,9 @@ public class VoltskiyaPlugin extends JavaPlugin {
         return instance;
     }
 
+    public @NonNull LuckPerms getLuckPerms(){
+        return luckPerms;
+    }
     private void setupACF() {
         commandManager = new PaperCommandManager(this);
     }

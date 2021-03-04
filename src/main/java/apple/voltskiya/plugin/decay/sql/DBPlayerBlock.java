@@ -1,6 +1,8 @@
 package apple.voltskiya.plugin.decay.sql;
 
+import com.destroystokyo.paper.event.block.BlockDestroyEvent;
 import org.bukkit.block.Block;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.jetbrains.annotations.NotNull;
 
@@ -9,7 +11,7 @@ import java.sql.SQLException;
 
 import static apple.voltskiya.plugin.decay.sql.DBNames.PlayerBlock.*;
 
-public class InsertDB {
+public class DBPlayerBlock {
     private static final int SUPPORT_RADIUS = 5;
 
     private static final String sqlDetermineStrength = String.format(
@@ -83,6 +85,44 @@ public class InsertDB {
                     blockPlaced.getY() + SUPPORT_RADIUS,
                     blockPlaced.getZ() - SUPPORT_RADIUS,
                     blockPlaced.getZ() + SUPPORT_RADIUS
+            );
+            statement = VerifyDecayDB.database.prepareStatement(sql);
+            statement.execute();
+            statement.close();
+        }
+    }
+
+    public static void gone(BlockBreakEvent event) throws SQLException {
+        @NotNull Block blockPoofed = event.getBlock();
+        synchronized (VerifyDecayDB.syncDB) {
+            String sql = String.format(
+                    "DELETE\n" +
+                            "FROM %s\n" +
+                            "WHERE %s = %d\n" +
+                            "  AND %s = %d\n" +
+                            "  AND %s = %d",
+                    PLAYER_BLOCK,
+                    X,
+                    blockPoofed.getX(),
+                    Y,
+                    blockPoofed.getY(),
+                    Z,
+                    blockPoofed.getZ()
+            );
+            System.out.println(sql);
+            PreparedStatement statement = VerifyDecayDB.database.prepareStatement(sql);
+            statement.execute();
+            statement.close();
+
+            sql = String.format(
+                    sqlUpdateStrength,
+                    -1, //TODO change the strength of blocks
+                    blockPoofed.getX() - SUPPORT_RADIUS,
+                    blockPoofed.getX() + SUPPORT_RADIUS,
+                    blockPoofed.getY() - SUPPORT_RADIUS,
+                    blockPoofed.getY() + SUPPORT_RADIUS,
+                    blockPoofed.getZ() - SUPPORT_RADIUS,
+                    blockPoofed.getZ() + SUPPORT_RADIUS
             );
             statement = VerifyDecayDB.database.prepareStatement(sql);
             statement.execute();
