@@ -14,6 +14,7 @@ public class PluginDecay extends VoltskiyaModule {
     public static final long DECAY_INTERVAL = 20;
     public static final float DECAY_PERCENTAGE = .01f;
     public static final float DECAY_INTENSITY = .01f;
+    public static final int DEFAULT_RESISTANCE = 1;
 
     private static PluginDecay instance;
     private Logger logger;

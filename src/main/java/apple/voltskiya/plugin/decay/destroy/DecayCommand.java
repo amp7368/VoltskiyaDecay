@@ -1,6 +1,6 @@
 package apple.voltskiya.plugin.decay.destroy;
 
-import apple.voltskiya.plugin.decay.Permissions;
+import apple.voltskiya.plugin.Permissions;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.CommandPermission;

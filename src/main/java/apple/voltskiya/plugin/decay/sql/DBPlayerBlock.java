@@ -1,5 +1,6 @@
 package apple.voltskiya.plugin.decay.sql;
 
+import apple.voltskiya.plugin.decay.DataPlayerBlock;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.event.block.BlockBreakEvent;

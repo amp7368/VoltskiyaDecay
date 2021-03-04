@@ -1,5 +1,7 @@
-package apple.voltskiya.plugin.decay.sql;
+package apple.voltskiya.plugin.decay;
 
+import apple.voltskiya.plugin.decay.sql.DBPlayerBlock;
+import apple.voltskiya.plugin.decay.sql.VerifyDecayDB;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 
@@ -36,10 +38,13 @@ public class DataPlayerBlock {
     }
 
     public void decay() {
+        Material nextMaterial = DecayModifiers.getNextDecay(block);
+        int newStrength = DecayModifiers.getResistance(block);
         synchronized (VerifyDecayDB.syncDB) {
             try {
-                DBPlayerBlock.remove(x, y, z);
-                Bukkit.getWorld(worldUUID).getBlockAt(x, y, z).setType(Material.AIR);
+                if (newStrength == 0) DBPlayerBlock.remove(x, y, z);
+                else DBPlayerBlock.update(x, y, z, -(myStrength - newStrength));
+                Bukkit.getWorld(worldUUID).getBlockAt(x, y, z).setType(nextMaterial);
             } catch (SQLException throwables) {
                 //TODO
                 throwables.printStackTrace();

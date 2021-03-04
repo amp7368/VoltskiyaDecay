@@ -11,7 +11,7 @@ import java.sql.Statement;
 import java.util.logging.Level;
 
 public class VerifyDecayDB {
-    protected static final Object syncDB = new Object();
+    public static final Object syncDB = new Object();
     protected static Connection database;
 
     private static final String DATABASE_NAME = "decay.db";
