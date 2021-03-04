@@ -111,13 +111,6 @@ public class VoltskiyaPlugin extends JavaPlugin {
         getLogger().log(Level.INFO, "Enabled Voltskiya Module: " + module.getName());
     }
 
-    public static VoltskiyaPlugin get() {
-        return instance;
-    }
-
-    public @NonNull LuckPerms getLuckPerms(){
-        return luckPerms;
-    }
     private void setupACF() {
         commandManager = new PaperCommandManager(this);
     }
@@ -128,6 +121,18 @@ public class VoltskiyaPlugin extends JavaPlugin {
         } else {
             getLogger().log(Level.WARNING, "LuckPerms is not enabled, some functions may be disabled.");
         }
+    }
+
+    public static VoltskiyaPlugin get() {
+        return instance;
+    }
+
+    public @NonNull LuckPerms getLuckPerms() {
+        return luckPerms;
+    }
+
+    public PaperCommandManager getCommandManager() {
+        return commandManager;
     }
 
 }

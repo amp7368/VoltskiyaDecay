@@ -15,9 +15,28 @@ public class DecayHeartbeat {
 
     private static List<DataPlayerBlock> decayActions = new ArrayList<>();
     private static boolean isDecayCompleted = true;
+    private static boolean isHeartBeating = false;
 
-    public DecayHeartbeat() {
-        Bukkit.getScheduler().scheduleSyncRepeatingTask(VoltskiyaPlugin.get(), this::tick, DECAY_INTERVAL, Long.MAX_VALUE);
+    public synchronized static void startBeating() {
+        if (!isHeartBeating) {
+            isHeartBeating = true;
+            Bukkit.getScheduler().scheduleSyncDelayedTask(VoltskiyaPlugin.get(), DecayHeartbeat::tick, DECAY_INTERVAL);
+        }
+    }
+
+    public synchronized static void stopBeating() {
+        isHeartBeating = false;
+    }
+
+    private static synchronized void tick() {
+        new GetRandomAction().start(); // finish whenever. no rush
+        List<DataPlayerBlock> actionsToDo = getDecayed();
+        for (DataPlayerBlock action : actionsToDo) {
+            action.decay();
+        }
+        if (isHeartBeating) {
+            Bukkit.getScheduler().scheduleSyncDelayedTask(VoltskiyaPlugin.get(), DecayHeartbeat::tick, DECAY_INTERVAL);
+        }
     }
 
     private static synchronized List<DataPlayerBlock> getDecayed() {
@@ -34,14 +53,6 @@ public class DecayHeartbeat {
         }
     }
 
-    private void tick() {
-        new GetRandomAction().start(); // finish whenever. no rush
-        List<DataPlayerBlock> actionsToDo = getDecayed();
-        List<String> sqlToUpdate = new ArrayList<>();
-        for (DataPlayerBlock action : actionsToDo) {
-            action.decay();
-        }
-    }
 
     private static class GetRandomAction extends Thread {
         @Override

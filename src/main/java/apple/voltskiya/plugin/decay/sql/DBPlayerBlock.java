@@ -90,7 +90,6 @@ public class DBPlayerBlock {
             statement.setString(3, blockPlaced.getWorld().getUID().toString());
             statement.execute();
             statement.close();
-            System.out.println(blockPlaced.getWorld().getUID().toString());
 
             sql = String.format(
                     sqlUpdateStrength,
