@@ -10,6 +10,7 @@ import java.util.Random;
 import java.util.UUID;
 
 import static apple.voltskiya.plugin.decay.PluginDecay.DECAY_INTENSITY;
+import static apple.voltskiya.plugin.decay.PluginDecay.DEFAULT_RESISTANCE;
 
 public class DataPlayerBlock {
     private static final Random random = new Random();
@@ -34,16 +35,17 @@ public class DataPlayerBlock {
     }
 
     public boolean isDecay() {
-        return random.nextFloat() < DECAY_INTENSITY;
+        return random.nextFloat() < DECAY_INTENSITY/effectiveStrength;
     }
 
     public void decay() {
         Material nextMaterial = DecayModifiers.getNextDecay(block);
-        int newStrength = DecayModifiers.getResistance(block);
+        int newStrength = DecayModifiers.getResistance(nextMaterial);
+        System.out.printf("%s -> %s : %d\n", block.toString(), nextMaterial.toString(), newStrength);
         synchronized (VerifyDecayDB.syncDB) {
             try {
                 if (newStrength == 0) DBPlayerBlock.remove(x, y, z);
-                else DBPlayerBlock.update(x, y, z, -(myStrength - newStrength));
+                else DBPlayerBlock.update(x, y, z, -(myStrength - newStrength), nextMaterial);
                 Bukkit.getWorld(worldUUID).getBlockAt(x, y, z).setType(nextMaterial);
             } catch (SQLException throwables) {
                 //TODO

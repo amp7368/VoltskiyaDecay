@@ -1,6 +1,8 @@
 package apple.voltskiya.plugin.decay.sql;
 
 import apple.voltskiya.plugin.decay.DataPlayerBlock;
+import apple.voltskiya.plugin.decay.DecayModifiers;
+import apple.voltskiya.plugin.decay.PluginDecay;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -17,7 +19,6 @@ import static apple.voltskiya.plugin.decay.PluginDecay.DECAY_PERCENTAGE;
 import static apple.voltskiya.plugin.decay.sql.DBNames.PlayerBlock.*;
 
 public class DBPlayerBlock {
-    private static final int SUPPORT_RADIUS = 5;
 
     private static final String sqlDetermineStrength = String.format(
             "SELECT ifnull(sum(%s),0) \n" +
@@ -72,15 +73,15 @@ public class DBPlayerBlock {
                     blockPlaced.getY(),
                     blockPlaced.getZ(),
                     "?",
-                    1, //TODO change the strength of blocks
+                    DecayModifiers.getResistance(blockPlaced.getBlockData().getMaterial()), //TODO change the strength of blocks
                     String.format(
                             sqlDetermineStrength,
-                            blockPlaced.getX() - SUPPORT_RADIUS,
-                            blockPlaced.getX() + SUPPORT_RADIUS,
-                            blockPlaced.getY() - SUPPORT_RADIUS,
-                            blockPlaced.getY() + SUPPORT_RADIUS,
-                            blockPlaced.getZ() - SUPPORT_RADIUS,
-                            blockPlaced.getZ() + SUPPORT_RADIUS
+                            blockPlaced.getX() - PluginDecay.SUPPORT_RADIUS,
+                            blockPlaced.getX() + PluginDecay.SUPPORT_RADIUS,
+                            blockPlaced.getY() - PluginDecay.SUPPORT_RADIUS,
+                            blockPlaced.getY() + PluginDecay.SUPPORT_RADIUS,
+                            blockPlaced.getZ() - PluginDecay.SUPPORT_RADIUS,
+                            blockPlaced.getZ() + PluginDecay.SUPPORT_RADIUS
                     ),
                     "?",
                     "?"
@@ -95,12 +96,12 @@ public class DBPlayerBlock {
             sql = String.format(
                     sqlUpdateStrength,
                     1, //TODO change the strength of blocks
-                    blockPlaced.getX() - SUPPORT_RADIUS,
-                    blockPlaced.getX() + SUPPORT_RADIUS,
-                    blockPlaced.getY() - SUPPORT_RADIUS,
-                    blockPlaced.getY() + SUPPORT_RADIUS,
-                    blockPlaced.getZ() - SUPPORT_RADIUS,
-                    blockPlaced.getZ() + SUPPORT_RADIUS
+                    blockPlaced.getX() - PluginDecay.SUPPORT_RADIUS,
+                    blockPlaced.getX() + PluginDecay.SUPPORT_RADIUS,
+                    blockPlaced.getY() - PluginDecay.SUPPORT_RADIUS,
+                    blockPlaced.getY() + PluginDecay.SUPPORT_RADIUS,
+                    blockPlaced.getZ() - PluginDecay.SUPPORT_RADIUS,
+                    blockPlaced.getZ() + PluginDecay.SUPPORT_RADIUS
             );
             statement = VerifyDecayDB.database.prepareStatement(sql);
             statement.execute();
@@ -118,7 +119,6 @@ public class DBPlayerBlock {
 
     public static void remove(int x, int y, int z) throws SQLException {
         synchronized (VerifyDecayDB.syncDB) {
-
             String sql = String.format(
                     sqlUpdateStrength,
                     String.format(
@@ -127,12 +127,12 @@ public class DBPlayerBlock {
                             y,
                             z
                     ),
-                    x - SUPPORT_RADIUS,
-                    x + SUPPORT_RADIUS,
-                    y - SUPPORT_RADIUS,
-                    y + SUPPORT_RADIUS,
-                    z - SUPPORT_RADIUS,
-                    z + SUPPORT_RADIUS
+                    x - PluginDecay.SUPPORT_RADIUS,
+                    x + PluginDecay.SUPPORT_RADIUS,
+                    y - PluginDecay.SUPPORT_RADIUS,
+                    y + PluginDecay.SUPPORT_RADIUS,
+                    z - PluginDecay.SUPPORT_RADIUS,
+                    z + PluginDecay.SUPPORT_RADIUS
             );
             PreparedStatement statement = VerifyDecayDB.database.prepareStatement(sql);
             statement.execute();
@@ -194,7 +194,68 @@ public class DBPlayerBlock {
         }
     }
 
-    public static void update(int x, int y, int z, int changeInDecay) {
+    public static void update(int x, int y, int z, int changeInDecay, Material nextMaterial) throws SQLException {
 
+        synchronized (VerifyDecayDB.syncDB) {
+            String sql = String.format("UPDATE %s\n" +
+                            "SET %s = %s - %d,\n" +
+                            "    %s = ?\n" +
+                            "WHERE %s = %d\n" +
+                            "AND %s = %d\n" +
+                            "AND %s = %d",
+                    PLAYER_BLOCK,
+                    MY_STRENGTH,
+                    MY_STRENGTH,
+                    changeInDecay,
+                    BLOCK,
+                    X,
+                    x,
+                    Y,
+                    y,
+                    Z,
+                    z
+            );
+            PreparedStatement statement = VerifyDecayDB.database.prepareStatement(sql);
+            statement.setString(1, nextMaterial.name());
+            statement.execute();
+            statement.close();
+
+            sql = String.format(
+                    "UPDATE %s\n" +
+                            "SET %s = %s + %d\n" +
+                            "WHERE %s = %d\n" +
+                            "  AND %s = %d\n" +
+                            "  AND %s = %d",
+                    PLAYER_BLOCK,
+                    EFFECTIVE_STRENGTH,
+                    EFFECTIVE_STRENGTH,
+                    changeInDecay,
+                    X,
+                    x,
+                    Y,
+                    y,
+                    Z,
+                    z
+            );
+            statement = VerifyDecayDB.database.prepareStatement(sql);
+            statement.execute();
+            statement.close();
+
+
+            sql = String.format(
+                    sqlUpdateStrength,
+                    -changeInDecay,
+                    x - PluginDecay.SUPPORT_RADIUS,
+                    x + PluginDecay.SUPPORT_RADIUS,
+                    y - PluginDecay.SUPPORT_RADIUS,
+                    y + PluginDecay.SUPPORT_RADIUS,
+                    z - PluginDecay.SUPPORT_RADIUS,
+                    z + PluginDecay.SUPPORT_RADIUS
+            );
+            statement = VerifyDecayDB.database.prepareStatement(sql);
+            statement.execute();
+            statement.close();
+
+        }
     }
 }

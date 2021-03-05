@@ -13,8 +13,9 @@ import java.util.logging.Logger;
 public class PluginDecay extends VoltskiyaModule {
     public static final long DECAY_INTERVAL = 20;
     public static final float DECAY_PERCENTAGE = .01f;
-    public static final float DECAY_INTENSITY = .01f;
-    public static final int DEFAULT_RESISTANCE = 1;
+    public static final int DEFAULT_RESISTANCE = 10;
+    public static final int SUPPORT_RADIUS = 20;
+    public static float DECAY_INTENSITY = .002f;
 
     private static PluginDecay instance;
     private Logger logger;

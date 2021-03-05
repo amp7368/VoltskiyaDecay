@@ -12,7 +12,6 @@ import java.util.List;
 import static apple.voltskiya.plugin.decay.PluginDecay.DECAY_INTERVAL;
 
 public class DecayHeartbeat {
-
     private static List<DataPlayerBlock> decayActions = new ArrayList<>();
     private static boolean isDecayCompleted = true;
     private static boolean isHeartBeating = false;
