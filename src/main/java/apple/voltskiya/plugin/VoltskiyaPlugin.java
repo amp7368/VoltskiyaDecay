@@ -25,7 +25,7 @@ public class VoltskiyaPlugin extends JavaPlugin {
     private PaperCommandManager commandManager;
     private final List<VoltskiyaModule> modules = new ArrayList<>();
     private final List<String> loadedJars = new ArrayList<>();
-    private @NonNull LuckPerms luckPerms;
+    private LuckPerms luckPerms;
 
     @Override
     public void onEnable() {

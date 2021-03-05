@@ -8,6 +8,7 @@ import java.util.logging.Logger;
 public abstract class VoltskiyaModule {
 
     private boolean isEnabled;
+    private Logger logger;
 
     void init() {
     }
@@ -34,9 +35,13 @@ public abstract class VoltskiyaModule {
         return dataFolder;
     }
 
-    public abstract void log(Level level, String message);
+    public void log(Level level, String message) {
+        logger.log(level, String.format(" [%s] %s", getName(), message));
+    }
 
-    public abstract void setLogger(Logger logger);
+    public void setLogger(Logger logger) {
+        this.logger = logger;
+    }
 
     @Override
     public int hashCode() {
