@@ -1,6 +1,5 @@
 package apple.voltskiya.plugin;
 
-import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.util.logging.Level;
@@ -9,7 +8,6 @@ import java.util.logging.Logger;
 public abstract class VoltskiyaModule {
 
     private boolean isEnabled;
-    private YamlConfiguration configuration;
 
     void init() {
     }
