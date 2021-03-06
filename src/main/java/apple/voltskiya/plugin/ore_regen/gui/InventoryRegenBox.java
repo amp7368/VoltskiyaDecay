@@ -4,6 +4,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -11,6 +12,7 @@ import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Objects;
 
 public class InventoryRegenBox implements InventoryHolder {
@@ -72,10 +74,14 @@ public class InventoryRegenBox implements InventoryHolder {
         inventory.setItem(35, InventoryRegenItems.nuffin());
 
         // fifth row
+        inventory.setItem(36, InventoryRegenItems.nuffin());
         inventory.setItem(44, InventoryRegenItems.nuffin());
 
         // sixth row
+        inventory.setItem(45, InventoryRegenItems.nuffin());
         inventory.setItem(53, InventoryRegenItems.nuffin());
+
+        for (int i = 36; i < 54; i++) inventory.setItem(i, InventoryRegenItems.nuffin());
     }
 
     @Override
@@ -84,6 +90,38 @@ public class InventoryRegenBox implements InventoryHolder {
     }
 
     public void nuffin(InventoryClickEvent ignored) {
+    }
+
+    public void dealWithAllow(InventoryClickEvent event) {
+        @Nullable ItemStack cursor = event.getCursor();
+        if (cursor == null || cursor.getType().isAir()) {
+            // clear whatever is in this slot
+            inventory.setItem(event.getSlot(), InventoryRegenItems.filler());
+        } else {
+            // if same type, add clicked stuff
+            // if different type, set clicked stuff
+            // if shift click increment or decrement the current item
+            ItemStack current = this.inventory.getItem(event.getSlot());
+            if (event.isShiftClick()) {
+                if (current != null) {
+                    if (event.isLeftClick()) {
+                        // decrement
+                        current.setAmount(current.getAmount() - 1);
+                    } else if (event.isRightClick()) {
+                        // increment
+                        current.setAmount(Math.min(current.getAmount() + 1, current.getMaxStackSize()));
+                    } else {
+                        // copy
+                        event.getWhoClicked().setItemOnCursor(new ItemStack(current));
+                    }
+                }
+            } else if (current == null || cursor.getType() != current.getType()) {
+                //  set clicked stuff
+                this.inventory.setItem(event.getSlot(), InventoryRegenItems.setAction(cursor, InventoryRegenItemToAction.ALLOW));
+            } else if (cursor.getType() == current.getType()) {
+                current.setAmount(Math.min(current.getAmount() + cursor.getAmount(), current.getMaxStackSize()));
+            }
+        }
     }
 
     public void dealWithBack(InventoryClickEvent event) {
@@ -102,7 +140,7 @@ public class InventoryRegenBox implements InventoryHolder {
         } else {
             int amount = itemThere.getAmount();
             if (amount == 1) {
-                for (HumanEntity viewer : inventory.getViewers()) {
+                for (HumanEntity viewer : new ArrayList<>(inventory.getViewers())) {
                     viewer.closeInventory(InventoryCloseEvent.Reason.PLUGIN);
                 }
             }
@@ -124,6 +162,4 @@ public class InventoryRegenBox implements InventoryHolder {
             return new InventoryRegenBox(this);
         }
     }
-
-
 }

@@ -56,7 +56,7 @@ public class InventoryRegenItems {
     }
 
     public static ItemStack filler() {
-        return createItem(Material.WHITE_STAINED_GLASS_PANE, 1, ".", null, NUFFIN);
+        return createItem(Material.WHITE_STAINED_GLASS_PANE, 1, ".", null, ALLOW);
     }
 
     public static ItemStack host() {
@@ -104,5 +104,13 @@ public class InventoryRegenItems {
                 ),
                 DISCARD
         );
+    }
+
+    public static ItemStack setAction(ItemStack item, InventoryRegenItemToAction action) {
+        item = new ItemStack(item);
+        ItemMeta meta = item.getItemMeta();
+        meta.getPersistentDataContainer().set(actionKey, PersistentDataType.STRING, action.name());
+        item.setItemMeta(meta);
+        return item;
     }
 }
