@@ -53,8 +53,9 @@ public class DBRegen {
     );
     private static final String GET_TOOL_INFO = String.format("SELECT * FROM %s WHERE %s = %%d", TOOL_UID_TABLE, TOOL_UID);
     private static final String GET_HOST_BLOCKS = String.format("SELECT * FROM %s WHERE %s = %%d", TOOL_TO_HOST_BLOCK_TABLE, TOOL_UID);
-    private static final String INSERT_SECTION_TO_BLOCK = String.format("INSERT INTO %s (%s,%s,%s,%s,%s,%s,%s) VALUES" +
-            " ( %%d, %%d, %%d, %%d, '%%s', %%b, '%%s' ) ON CONFLICT SET %s = %%b", SECTION_TO_BLOCK_TABLE, TOOL_UID, X, Y, Z, WORLD_UUID, IS_MARKED, BLOCK_NAME, IS_MARKED);
+    private static final String INSERT_SECTION_TO_BLOCK = String.format("INSERT INTO %s (%s,%s,%s,%s,%s,%s,%s) VALUES " +
+            " ( %%d, %%d, %%d, %%d, '%%s', %%b, '%%s' ) ON CONFLICT(%s,%s,%s,%s) DO UPDATE SET %s = %%b", SECTION_TO_BLOCK_TABLE,
+            TOOL_UID, X, Y, Z, WORLD_UUID, IS_MARKED, BLOCK_NAME, TOOL_UID, X, Y, Z, IS_MARKED);
     private static final String GET_MARKED_BLOCKS_OF_TOOL = String.format("SELECT * FROM %s WHERE %s = %%d AND %s = %%b", SECTION_TO_BLOCK_TABLE, TOOL_UID, IS_MARKED);
     public static final String UPDATE_IS_MARKED = String.format("UPDATE %s SET %s = %%b where %s = %%d", SECTION_TO_BLOCK_TABLE, IS_MARKED, TOOL_UID);
 

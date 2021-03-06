@@ -37,7 +37,6 @@ public class PluginOreRegen extends VoltskiyaModule {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                System.out.println("complete todo");
                 BrushExecution.completeTodo();
             }
         }).start();
