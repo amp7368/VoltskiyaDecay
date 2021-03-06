@@ -1,14 +1,16 @@
 package apple.voltskiya.plugin.ore_regen.gui;
 
-import apple.voltskiya.plugin.VoltskiyaPlugin;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static apple.voltskiya.plugin.ore_regen.gui.InventoryRegenItemToAction.*;
@@ -23,7 +25,7 @@ public class InventoryRegenItems {
         ItemStack item = new ItemStack(material, count);
         if (name != null) {
             ItemMeta meta = item.getItemMeta();
-            meta.setLocalizedName(name);
+            meta.displayName(Component.text(name, null, TextDecoration.BOLD));
             meta.getPersistentDataContainer().set(actionKey, PersistentDataType.STRING, action.name());
             item.setItemMeta(meta);
         }
@@ -50,7 +52,7 @@ public class InventoryRegenItems {
     public static ItemStack next(boolean isCreate, int page) {
         return createItem(Material.ARROW, 1, isCreate ? "Create page " + page : "Page " + page, new ArrayList<>() {{
             add("Go to the next page");
-        }}, NUFFIN);
+        }}, NEXT);
     }
 
     public static ItemStack filler() {
@@ -58,8 +60,49 @@ public class InventoryRegenItems {
     }
 
     public static ItemStack host() {
-        return createItem(Material.STONE_BRICK_WALL, 1, "Host blocks", new ArrayList<>() {{
-            add("Add blocks to the right of this to define what blocks currently exist");
-        }}, NUFFIN);
+        return createItem(Material.STONE_BRICK_WALL,
+                1,
+                "Host blocks",
+                Collections.singletonList(
+                        "Add blocks to the right of this to define what blocks currently exist"
+                ),
+                NUFFIN);
+    }
+
+    public static ItemStack vein() {
+        return createItem(Material.DIAMOND,
+                1,
+                "Vein sizes",
+                Arrays.asList(
+                        "Add ores to the right of this to define the sizes of ore veins",
+                        "If there are three stacks of size 4, and one stack of size 6,",
+                        "then 75% of the ore spawns will be of size 4, and 25% of the ore spawns will be of size 6"
+                ),
+                NUFFIN);
+    }
+
+    public static ItemStack density() {
+        return createItem(Material.GRAY_GLAZED_TERRACOTTA,
+                1,
+                "Density Distribution",
+                Arrays.asList(
+                        "Add ores and background blocks to the right of this to define the densities of the different block types",
+                        "If there is 97 stone blocks, 2 iron ore blocks, and 1 diamond ore block",
+                        "then the area will return back to 97% of the area selected by the background will be stone,",
+                        "2% will be iron ore, and 1% will be diamond ore"
+                ),
+                NUFFIN
+        );
+    }
+
+    public static ItemStack discard() {
+        return createItem(Material.RED_TERRACOTTA,
+                3,
+                "Discard this session",
+                Collections.singletonList(
+                        "To discard this session, continue to click discard"
+                ),
+                DISCARD
+        );
     }
 }

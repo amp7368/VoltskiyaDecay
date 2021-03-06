@@ -8,8 +8,9 @@ import java.util.function.BiConsumer;
 
 public enum InventoryRegenItemToAction {
     NUFFIN(InventoryRegenBox::nuffin),
-    BACK(InventoryRegenBox::dealWithBack);
-
+    BACK(InventoryRegenBox::dealWithBack),
+    DISCARD(InventoryRegenBox::dealWithDiscard),
+    NEXT(InventoryRegenBox::dealWithForward);
     private final BiConsumer<InventoryRegenBox, InventoryClickEvent> action;
 
     private static final String ACTION_KEY_NAME = "regen-item-action";

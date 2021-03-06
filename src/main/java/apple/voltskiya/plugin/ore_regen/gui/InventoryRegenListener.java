@@ -5,6 +5,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
@@ -25,6 +27,18 @@ public class InventoryRegenListener implements Listener {
                 for (InventoryRegenItemToAction a : InventoryRegenItemToAction.values())
                     if (a.name().equals(action)) a.run((InventoryRegenBox) holder, event);
                 event.setCancelled(true);
+            }
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void closeInventory(InventoryCloseEvent event) {
+        if (event.getReason() == InventoryCloseEvent.Reason.OPEN_NEW || event.getReason() == InventoryCloseEvent.Reason.PLUGIN) return;
+        Inventory inventory = event.getInventory();
+        if (inventory.getHolder() instanceof InventoryRegenBox) {
+            InventoryRegenBox newBox = ((InventoryRegenBox) inventory.getHolder()).tryToClose();
+            if (newBox != null) {
+                Bukkit.getScheduler().scheduleSyncDelayedTask(VoltskiyaPlugin.get(), () -> event.getPlayer().openInventory(newBox.getInventory()), 0);
             }
         }
     }
