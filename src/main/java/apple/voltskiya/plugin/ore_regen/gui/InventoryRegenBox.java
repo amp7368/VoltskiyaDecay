@@ -1,12 +1,9 @@
 package apple.voltskiya.plugin.ore_regen.gui;
 
-import apple.voltskiya.plugin.VoltskiyaPlugin;
-import apple.voltskiya.plugin.ore_regen.build.RegenConfigInstance;
 import apple.voltskiya.plugin.ore_regen.sql.DBRegen;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
@@ -26,11 +23,11 @@ import java.util.Objects;
 
 public class InventoryRegenBox implements InventoryHolder {
     public static final int POWERTOOL_TYPE_INDEX = 2;
-    private static final NamespacedKey POWERTOOL_UID_KEY = new NamespacedKey(VoltskiyaPlugin.get(), "powertool_regen_uid");
+    private static final int POWERTOOL_RADIUS_INDEX = 6;
     @Nullable
     private final InventoryRegenBox previous;
     @Nullable
-    private InventoryRegenBox next = null;
+    private InventoryRegenBox next;
 
     private final int pageNumber;
 
@@ -48,6 +45,22 @@ public class InventoryRegenBox implements InventoryHolder {
         this.pageNumber = pageNumber;
         this.next = null;
         initialize();
+        copySettings(previous);
+    }
+
+    private void copySettings(InventoryRegenBox other) {
+        for (int i = 1; i < 8; i++) {
+            if (i == 4) continue;
+            inventory.setItem(i, other.inventory.getItem(i));
+        }
+    }
+
+    private void sendSettingsPrev(InventoryRegenBox other) {
+        if (previous != null) previous.copySettings(other);
+    }
+
+    private void sendSettingsNext(InventoryRegenBox other) {
+        if (next != null) next.copySettings(other);
     }
 
     public InventoryRegenBox(InventoryRegenBox other) {
@@ -68,7 +81,7 @@ public class InventoryRegenBox implements InventoryHolder {
         inventory.setItem(3, InventoryRegenItems.nuffin());
         inventory.setItem(4, InventoryRegenItems.here(pageNumber));
         inventory.setItem(5, InventoryRegenItems.nuffin());
-        inventory.setItem(6, InventoryRegenItems.nuffin());
+        inventory.setItem(POWERTOOL_RADIUS_INDEX, InventoryRegenItems.radius());
         inventory.setItem(7, InventoryRegenItems.nuffin());
         inventory.setItem(8, InventoryRegenItems.next(next != null, pageNumber + 1));
 
@@ -153,6 +166,23 @@ public class InventoryRegenBox implements InventoryHolder {
         if (cursor != null && !cursor.getType().isAir()) {
             itemThere.setType(cursor.getType());
         }
+        sendSettingsNext(this);
+        sendSettingsPrev(this);
+    }
+
+    public void dealWithRadiusChange(InventoryClickEvent event) {
+        ItemStack itemThere = event.getCurrentItem();
+        if (itemThere == null) {
+            throw new IllegalStateException("ToolChange was attempted without something to attempt it.");
+        }
+        if (event.isLeftClick()) {
+            itemThere.setAmount(Math.max(1, itemThere.getAmount() - 1));
+        } else if (event.isRightClick()) {
+            itemThere.setAmount(Math.min(itemThere.getMaxStackSize(), itemThere.getAmount() + 1));
+        }
+        sendSettingsNext(this);
+        sendSettingsPrev(this);
+
     }
 
     public void dealWithSave(InventoryClickEvent event) {
@@ -161,7 +191,10 @@ public class InventoryRegenBox implements InventoryHolder {
         RegenConfigInstance config = configPrev.add(configNext);
 
         // set info about the config
-        config.brushRadius = 1;
+        ItemStack radiusItem = inventory.getItem(POWERTOOL_RADIUS_INDEX);
+        if (radiusItem == null) throw new IllegalStateException("There is no radius specified for the brush");
+        config.brushRadius = radiusItem.getAmount();
+
         config.brushType = RegenConfigInstance.BrushType.CUBE;
 
         ItemStack powertool = inventory.getItem(POWERTOOL_TYPE_INDEX);
@@ -171,7 +204,7 @@ public class InventoryRegenBox implements InventoryHolder {
         try {
 
             meta.getPersistentDataContainer().set(
-                    POWERTOOL_UID_KEY,
+                    RegenConfigInstance.POWERTOOL_UID_KEY,
                     PersistentDataType.LONG,
                     DBRegen.saveConfig(config)
             );

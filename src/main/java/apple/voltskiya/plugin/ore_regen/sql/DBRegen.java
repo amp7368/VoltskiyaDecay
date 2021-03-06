@@ -1,12 +1,16 @@
 package apple.voltskiya.plugin.ore_regen.sql;
 
-import apple.voltskiya.plugin.ore_regen.build.RegenConfigInstance;
+import apple.voltskiya.plugin.ore_regen.brush.ActiveBrush;
+import apple.voltskiya.plugin.ore_regen.brush.Coords;
+import apple.voltskiya.plugin.ore_regen.gui.RegenConfigInstance;
+import org.bukkit.Material;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Map;
+import java.util.*;
 
 import static apple.voltskiya.plugin.DBNames.Regen.*;
 
@@ -47,6 +51,13 @@ public class DBRegen {
             BLOCK_NAME,
             BLOCK_COUNT
     );
+    private static final String GET_TOOL_INFO = String.format("SELECT * FROM %s WHERE %s = %%d", TOOL_UID_TABLE, TOOL_UID);
+    private static final String GET_HOST_BLOCKS = String.format("SELECT * FROM %s WHERE %s = %%d", TOOL_TO_HOST_BLOCK_TABLE, TOOL_UID);
+    private static final String INSERT_SECTION_TO_BLOCK = String.format("INSERT INTO %s (%s,%s,%s,%s,%s,%s,%s) VALUES " +
+            " ( %%d, %%d, %%d, %%d, '%%s', %%b, '%%s' ) ON CONFLICT(%s,%s,%s,%s) DO UPDATE SET %s = %%b", SECTION_TO_BLOCK_TABLE,
+            TOOL_UID, X, Y, Z, WORLD_UUID, IS_MARKED, BLOCK_NAME, TOOL_UID, X, Y, Z, IS_MARKED);
+    private static final String GET_MARKED_BLOCKS_OF_TOOL = String.format("SELECT * FROM %s WHERE %s = %%d AND %s = %%b", SECTION_TO_BLOCK_TABLE, TOOL_UID, IS_MARKED);
+    public static final String UPDATE_IS_MARKED = String.format("UPDATE %s SET %s = %%b where %s = %%d", SECTION_TO_BLOCK_TABLE, IS_MARKED, TOOL_UID);
 
     public static long saveConfig(RegenConfigInstance config) throws SQLException {
         synchronized (VerifyRegenDB.syncDB) {
@@ -85,6 +96,73 @@ public class DBRegen {
             }
 
             return uid;
+        }
+    }
+
+    @Nullable
+    public static ActiveBrush getBrush(long uid) throws SQLException {
+        synchronized (VerifyRegenDB.syncDB) {
+            Statement statement = VerifyRegenDB.database.createStatement();
+            ResultSet response = statement.executeQuery(String.format(GET_TOOL_INFO, uid));
+            if (response.isClosed()) return null;
+            RegenConfigInstance.BrushType brushType = RegenConfigInstance.BrushType.valueOf(response.getString(BRUSH_TYPE));
+            int radius = response.getInt(BRUSH_RADIUS);
+            response.close();
+
+            Map<Material, Integer> hostBlocks = new HashMap<>();
+            response = statement.executeQuery(String.format(GET_HOST_BLOCKS, uid));
+            while (response.next()) {
+                hostBlocks.put(
+                        Material.getMaterial(response.getString(BLOCK_NAME)),
+                        response.getInt(BLOCK_COUNT)
+                );
+            }
+            statement.close();
+
+            return new ActiveBrush(uid, brushType, radius, Material.EMERALD_BLOCK, hostBlocks);
+        }
+    }
+
+    public static void setMarked(Map<Long, List<Coords>> allCoords, boolean marking) throws SQLException {
+        synchronized (VerifyRegenDB.syncDB) {
+            Statement statement = VerifyRegenDB.database.createStatement();
+            for (Map.Entry<Long, List<Coords>> tool : allCoords.entrySet()) {
+                long uid = tool.getKey();
+                for (Coords coords : tool.getValue()) {
+                    statement.addBatch(String.format(INSERT_SECTION_TO_BLOCK,
+                            uid,
+                            coords.x,
+                            coords.y,
+                            coords.z,
+                            coords.worldUID.toString(),
+                            marking,
+                            coords.lastBlock,
+                            !marking
+                    ));
+                }
+            }
+            statement.executeBatch();
+            statement.close();
+        }
+    }
+
+    public static List<Coords> marking(long uid, boolean marking) throws SQLException {
+        synchronized (VerifyRegenDB.syncDB) {
+            Statement statement = VerifyRegenDB.database.createStatement();
+            ResultSet response = statement.executeQuery(String.format(GET_MARKED_BLOCKS_OF_TOOL, uid, !marking));
+            List<Coords> coords = new ArrayList<>();
+            while (response.next()) {
+                int x = response.getInt(X);
+                int y = response.getInt(Y);
+                int z = response.getInt(Z);
+                UUID worldUid = UUID.fromString(response.getString(WORLD_UUID));
+                Material block = Material.getMaterial(response.getString(BLOCK_NAME));
+                coords.add(new Coords(x, y, z, worldUid, Material.EMERALD_BLOCK, block));
+            }
+            response.close();
+            statement.execute(String.format(UPDATE_IS_MARKED, marking, uid));
+            statement.close();
+            return coords;
         }
     }
 }
