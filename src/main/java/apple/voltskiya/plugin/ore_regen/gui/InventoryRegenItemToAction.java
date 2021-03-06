@@ -7,11 +7,12 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import java.util.function.BiConsumer;
 
 public enum InventoryRegenItemToAction {
-    ALLOW(InventoryRegenBox::dealWithAllow),
     NUFFIN(InventoryRegenBox::nuffin),
+    ALLOW(InventoryRegenBox::dealWithAllow),
     BACK(InventoryRegenBox::dealWithBack),
+    NEXT(InventoryRegenBox::dealWithForward),
     DISCARD(InventoryRegenBox::dealWithDiscard),
-    NEXT(InventoryRegenBox::dealWithForward);
+    SAVE(InventoryRegenBox::dealWithSave);
     private final BiConsumer<InventoryRegenBox, InventoryClickEvent> action;
 
     private static final String ACTION_KEY_NAME = "regen-item-action";

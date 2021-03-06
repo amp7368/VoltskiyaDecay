@@ -1,10 +1,10 @@
 package apple.voltskiya.plugin.ore_regen.gui;
 
+import apple.voltskiya.plugin.ore_regen.build.RegenConfigInstance;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -13,6 +13,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 public class InventoryRegenBox implements InventoryHolder {
@@ -131,6 +133,31 @@ public class InventoryRegenBox implements InventoryHolder {
     public void dealWithForward(InventoryClickEvent event) {
         event.getWhoClicked().openInventory(Objects.requireNonNullElseGet(next,
                 () -> new InventoryRegenBox(this, pageNumber + 1)).getInventory());
+    }
+
+    public void dealWithSave(InventoryClickEvent event) {
+        RegenConfigInstance configPrev = previous == null ? new RegenConfigInstance() : previous.countPrevious();
+        RegenConfigInstance configNext = countNext();
+        RegenConfigInstance config = configPrev.add(configNext);
+    }
+
+    private RegenConfigInstance countNext() {
+        RegenConfigInstance me = countThis();
+        RegenConfigInstance config = next == null ? new RegenConfigInstance() : next.countNext();
+        return me.add(config);
+    }
+
+    private RegenConfigInstance countPrevious() {
+        RegenConfigInstance me = countThis();
+        RegenConfigInstance config = previous == null ? new RegenConfigInstance() : previous.countPrevious();
+        return me.add(config);
+    }
+
+    private RegenConfigInstance countThis() {
+        Map<String, Integer> hostBlockToCount = new HashMap<>();
+        Map<String, Integer> veinSizeBlockToCount = new HashMap<>();
+        Map<String, Integer> densityDistributionBlockToCount = new HashMap<>();
+        return new RegenConfigInstance(hostBlockToCount, veinSizeBlockToCount, densityDistributionBlockToCount);
     }
 
     public void dealWithDiscard(InventoryClickEvent inventoryClickEvent) {
