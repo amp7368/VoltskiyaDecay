@@ -22,6 +22,7 @@ public class DBNames {
         public static final String Y = "y";
         public static final String Z = "z";
     }
+
     public static class PlayerBlock {
         public static final String X = "x";
         public static final String Y = "y";

@@ -1,6 +1,9 @@
 package apple.voltskiya.plugin.ore_regen.sql;
 
-import apple.voltskiya.plugin.ore_regen.build.RegenConfigInstance;
+import apple.voltskiya.plugin.ore_regen.brush.ActiveBrush;
+import apple.voltskiya.plugin.ore_regen.gui.RegenConfigInstance;
+import org.bukkit.Material;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -47,6 +50,7 @@ public class DBRegen {
             BLOCK_NAME,
             BLOCK_COUNT
     );
+    private static final String GET_TOOL_INFO = String.format("SELECT * FROM %s WHERE %s = %%d", TOOL_UID_TABLE, TOOL_UID);
 
     public static long saveConfig(RegenConfigInstance config) throws SQLException {
         synchronized (VerifyRegenDB.syncDB) {
@@ -85,6 +89,20 @@ public class DBRegen {
             }
 
             return uid;
+        }
+    }
+
+    @Nullable
+    public static ActiveBrush getBrush(long uid) throws SQLException {
+        synchronized (VerifyRegenDB.syncDB) {
+            Statement statement = VerifyRegenDB.database.createStatement();
+            ResultSet response = statement.executeQuery(String.format(GET_TOOL_INFO, uid));
+            if (response.isClosed()) return null;
+            RegenConfigInstance.BrushType brushType = RegenConfigInstance.BrushType.valueOf(response.getString(BRUSH_TYPE));
+            int radius = response.getInt(BRUSH_RADIUS);
+            response.close();
+            statement.close();
+            return new ActiveBrush(uid, brushType, radius, Material.EMERALD_BLOCK);
         }
     }
 }

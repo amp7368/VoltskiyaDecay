@@ -1,12 +1,9 @@
 package apple.voltskiya.plugin.ore_regen.gui;
 
-import apple.voltskiya.plugin.VoltskiyaPlugin;
-import apple.voltskiya.plugin.ore_regen.build.RegenConfigInstance;
 import apple.voltskiya.plugin.ore_regen.sql.DBRegen;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
@@ -26,7 +23,6 @@ import java.util.Objects;
 
 public class InventoryRegenBox implements InventoryHolder {
     public static final int POWERTOOL_TYPE_INDEX = 2;
-    private static final NamespacedKey POWERTOOL_UID_KEY = new NamespacedKey(VoltskiyaPlugin.get(), "powertool_regen_uid");
     @Nullable
     private final InventoryRegenBox previous;
     @Nullable
@@ -171,7 +167,7 @@ public class InventoryRegenBox implements InventoryHolder {
         try {
 
             meta.getPersistentDataContainer().set(
-                    POWERTOOL_UID_KEY,
+                    RegenConfigInstance.POWERTOOL_UID_KEY,
                     PersistentDataType.LONG,
                     DBRegen.saveConfig(config)
             );

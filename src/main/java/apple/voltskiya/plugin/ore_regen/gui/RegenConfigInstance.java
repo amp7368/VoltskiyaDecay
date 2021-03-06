@@ -1,10 +1,14 @@
-package apple.voltskiya.plugin.ore_regen.build;
+package apple.voltskiya.plugin.ore_regen.gui;
+
+import apple.voltskiya.plugin.VoltskiyaPlugin;
+import org.bukkit.NamespacedKey;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 public class RegenConfigInstance {
+    public static final NamespacedKey POWERTOOL_UID_KEY = new NamespacedKey(VoltskiyaPlugin.get(), "powertool_regen_uid");
     private final Map<String, Integer> hostBlockToCount;
     private final Map<String, Integer> veinSizeBlockToCount;
     private final Map<String, Integer> densityDistributionBlockToCount;
@@ -41,7 +45,8 @@ public class RegenConfigInstance {
 
     public enum BrushType {
         SPHERE,
-        CUBE
+        CUBE,
+        CORNER_SELECT
     }
 
     public Set<Map.Entry<String, Integer>> getHostBlockToCount() {
