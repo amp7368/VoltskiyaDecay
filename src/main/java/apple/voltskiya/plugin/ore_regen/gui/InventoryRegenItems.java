@@ -34,6 +34,14 @@ public class InventoryRegenItems {
     }
 
 
+    public static ItemStack setAction(ItemStack item, InventoryRegenItemToAction action) {
+        item = new ItemStack(item);
+        ItemMeta meta = item.getItemMeta();
+        meta.getPersistentDataContainer().set(actionKey, PersistentDataType.STRING, action.name());
+        item.setItemMeta(meta);
+        return item;
+    }
+
     public static ItemStack nuffin() {
         return createItem(Material.BLACK_STAINED_GLASS_PANE, 1, ".", null, NUFFIN);
     }
@@ -106,11 +114,23 @@ public class InventoryRegenItems {
         );
     }
 
-    public static ItemStack setAction(ItemStack item, InventoryRegenItemToAction action) {
-        item = new ItemStack(item);
-        ItemMeta meta = item.getItemMeta();
-        meta.getPersistentDataContainer().set(actionKey, PersistentDataType.STRING, action.name());
-        item.setItemMeta(meta);
-        return item;
+    public static ItemStack toolType() {
+        return createItem(
+                Material.STICK,
+                1,
+                "Powertool",
+                Collections.singletonList("The item the powertool will take the form of"),
+                POWERTOOL
+        );
+    }
+
+    public static ItemStack saveConfig() {
+        return createItem(
+                Material.GREEN_TERRACOTTA,
+                1,
+                "Save this as a powertool",
+                null,
+                SAVE
+        );
     }
 }

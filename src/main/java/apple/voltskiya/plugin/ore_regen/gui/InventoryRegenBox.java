@@ -1,13 +1,19 @@
 package apple.voltskiya.plugin.ore_regen.gui;
 
+import apple.voltskiya.plugin.VoltskiyaPlugin;
 import apple.voltskiya.plugin.ore_regen.build.RegenConfigInstance;
+import apple.voltskiya.plugin.ore_regen.sql.DBRegen;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -18,6 +24,8 @@ import java.util.Map;
 import java.util.Objects;
 
 public class InventoryRegenBox implements InventoryHolder {
+    public static final int POWERTOOL_TYPE_INDEX = 2;
+    private static final NamespacedKey POWERTOOL_UID_KEY = new NamespacedKey(VoltskiyaPlugin.get(), "powertool_regen_uid");
     @Nullable
     private final InventoryRegenBox previous;
     @Nullable
@@ -55,7 +63,7 @@ public class InventoryRegenBox implements InventoryHolder {
         // first row
         inventory.setItem(0, InventoryRegenItems.back(pageNumber == 1 ? "None" : String.valueOf(pageNumber - 1)));
         inventory.setItem(1, InventoryRegenItems.nuffin());
-        inventory.setItem(2, InventoryRegenItems.nuffin());
+        inventory.setItem(POWERTOOL_TYPE_INDEX, InventoryRegenItems.toolType());
         inventory.setItem(3, InventoryRegenItems.nuffin());
         inventory.setItem(4, InventoryRegenItems.here(pageNumber));
         inventory.setItem(5, InventoryRegenItems.nuffin());
@@ -73,7 +81,7 @@ public class InventoryRegenBox implements InventoryHolder {
 
         // fourth row
         inventory.setItem(27, InventoryRegenItems.density());
-        inventory.setItem(35, InventoryRegenItems.nuffin());
+        inventory.setItem(35, InventoryRegenItems.saveConfig());
 
         // fifth row
         inventory.setItem(36, InventoryRegenItems.nuffin());
@@ -135,10 +143,33 @@ public class InventoryRegenBox implements InventoryHolder {
                 () -> new InventoryRegenBox(this, pageNumber + 1)).getInventory());
     }
 
+    public void dealWithChangeTool(InventoryClickEvent event) {
+        ItemStack itemThere = event.getCurrentItem();
+        if (itemThere == null) {
+            throw new IllegalStateException("ToolChange was attempted without something to attempt it.");
+        }
+        ItemStack cursor = event.getCursor();
+        if (cursor != null && !cursor.getType().isAir()) {
+            itemThere.setType(cursor.getType());
+        }
+    }
+
     public void dealWithSave(InventoryClickEvent event) {
         RegenConfigInstance configPrev = previous == null ? new RegenConfigInstance() : previous.countPrevious();
         RegenConfigInstance configNext = countNext();
         RegenConfigInstance config = configPrev.add(configNext);
+
+        ItemStack powertool = inventory.getItem(POWERTOOL_TYPE_INDEX);
+        ItemStack item = new ItemStack(powertool == null ? Material.STICK : powertool.getType(), 1);
+        ItemMeta meta = item.getItemMeta();
+        meta.displayName(Component.text("Regen Powertool - (rename me)"));
+        meta.getPersistentDataContainer().set(
+                POWERTOOL_UID_KEY,
+                PersistentDataType.LONG,
+                DBRegen.saveConfig(config)
+        );
+        item.setItemMeta(meta);
+        event.getWhoClicked().getInventory().addItem(item);
     }
 
     private RegenConfigInstance countNext() {

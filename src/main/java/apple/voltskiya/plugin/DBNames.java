@@ -1,4 +1,4 @@
-package apple.voltskiya.plugin.decay.sql;
+package apple.voltskiya.plugin;
 
 public class DBNames {
     public static class PlayerBlock {

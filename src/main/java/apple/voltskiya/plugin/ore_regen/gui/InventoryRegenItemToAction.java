@@ -12,7 +12,8 @@ public enum InventoryRegenItemToAction {
     BACK(InventoryRegenBox::dealWithBack),
     NEXT(InventoryRegenBox::dealWithForward),
     DISCARD(InventoryRegenBox::dealWithDiscard),
-    SAVE(InventoryRegenBox::dealWithSave);
+    SAVE(InventoryRegenBox::dealWithSave),
+    POWERTOOL(InventoryRegenBox::dealWithChangeTool);
     private final BiConsumer<InventoryRegenBox, InventoryClickEvent> action;
 
     private static final String ACTION_KEY_NAME = "regen-item-action";

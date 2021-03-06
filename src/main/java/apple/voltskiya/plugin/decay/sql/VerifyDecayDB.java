@@ -1,5 +1,6 @@
 package apple.voltskiya.plugin.decay.sql;
 
+import apple.voltskiya.plugin.DBNames;
 import apple.voltskiya.plugin.decay.PluginDecay;
 import apple.voltskiya.plugin.VoltskiyaModule;
 
