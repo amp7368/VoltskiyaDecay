@@ -1,7 +1,6 @@
 package apple.voltskiya.plugin.ore_regen.brush;
 
 import apple.voltskiya.plugin.VoltskiyaPlugin;
-import apple.voltskiya.plugin.ore_regen.PluginOreRegen;
 import apple.voltskiya.plugin.ore_regen.gui.RegenConfigInstance;
 import apple.voltskiya.plugin.ore_regen.sql.DBRegen;
 import org.bukkit.Bukkit;
@@ -17,7 +16,7 @@ import java.util.*;
 public class ActiveBrush {
     public static final long PRUNE_PERIOD = 1000 * 60 * 10;
     private static final long MAX_RECENTLY_USED_TIME = 1000 * 60 * 10;
-    public static final int BLOCKS_TO_UPDATE_AT_ONCE = 100;
+    public static final int BLOCKS_TO_UPDATE_AT_ONCE = 500;
 
     private final RegenConfigInstance.BrushType brushType;
     private final int radius;
@@ -93,30 +92,31 @@ public class ActiveBrush {
         }
     }
 
-    public void unmarkAll() {
+    public void markAll(boolean marking) {
         List<Coords> coordsToUnmark;
         try {
-            coordsToUnmark = DBRegen.setUnmarked(uid);
+            coordsToUnmark = DBRegen.marking(uid,marking);
         } catch (SQLException throwables) {
             throwables.printStackTrace();
             return;
         }
-        List<List<Coords>> dividedCoordsToUnmark = new ArrayList<>();
+        List<List<Coords>> dividedCoordsToMark = new ArrayList<>();
         int i = 0;
         List<Coords> current = new ArrayList<>(BLOCKS_TO_UPDATE_AT_ONCE);
         for (Coords coords : coordsToUnmark) {
             if (++i % BLOCKS_TO_UPDATE_AT_ONCE == 0) {
-                dividedCoordsToUnmark.add(current);
+                dividedCoordsToMark.add(current);
                 current = new ArrayList<>(BLOCKS_TO_UPDATE_AT_ONCE);
             }
             current.add(coords);
         }
-        unmarkDivided(dividedCoordsToUnmark);
+        dividedCoordsToMark.add(current);
+        markDivided(dividedCoordsToMark,marking);
     }
 
-    private void unmarkDivided(List<List<Coords>> dividedCoordsToUnmark) {
-        if (dividedCoordsToUnmark.isEmpty()) return;
-        for (Coords coords : dividedCoordsToUnmark.remove(0)) coords.unmark();
-        Bukkit.getScheduler().scheduleSyncDelayedTask(VoltskiyaPlugin.get(), () -> this.unmarkDivided(dividedCoordsToUnmark), 5);
+    private void markDivided(List<List<Coords>> dividedCoordsTomark,boolean marking) {
+        if (dividedCoordsTomark.isEmpty()) return;
+        for (Coords coords : dividedCoordsTomark.remove(0)) coords.mark(marking);
+        Bukkit.getScheduler().scheduleSyncDelayedTask(VoltskiyaPlugin.get(), () -> this.markDivided(dividedCoordsTomark,marking), 5);
     }
 }

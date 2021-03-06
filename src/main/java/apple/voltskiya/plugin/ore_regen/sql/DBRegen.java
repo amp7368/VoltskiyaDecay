@@ -54,7 +54,7 @@ public class DBRegen {
     private static final String GET_TOOL_INFO = String.format("SELECT * FROM %s WHERE %s = %%d", TOOL_UID_TABLE, TOOL_UID);
     private static final String GET_HOST_BLOCKS = String.format("SELECT * FROM %s WHERE %s = %%d", TOOL_TO_HOST_BLOCK_TABLE, TOOL_UID);
     private static final String INSERT_SECTION_TO_BLOCK = String.format("INSERT INTO %s (%s,%s,%s,%s,%s,%s,%s) VALUES" +
-            " ( %%d, %%d, %%d, %%d, '%%s', %%b, '%%s' )", SECTION_TO_BLOCK_TABLE, TOOL_UID, X, Y, Z, WORLD_UUID, IS_MARKED, BLOCK_NAME);
+            " ( %%d, %%d, %%d, %%d, '%%s', %%b, '%%s' ) ON CONFLICT SET %s = %%b", SECTION_TO_BLOCK_TABLE, TOOL_UID, X, Y, Z, WORLD_UUID, IS_MARKED, BLOCK_NAME, IS_MARKED);
     private static final String GET_MARKED_BLOCKS_OF_TOOL = String.format("SELECT * FROM %s WHERE %s = %%d AND %s = %%b", SECTION_TO_BLOCK_TABLE, TOOL_UID, IS_MARKED);
     public static final String UPDATE_IS_MARKED = String.format("UPDATE %s SET %s = %%b where %s = %%d", SECTION_TO_BLOCK_TABLE, IS_MARKED, TOOL_UID);
 
@@ -122,7 +122,7 @@ public class DBRegen {
         }
     }
 
-    public static void setMarked(Map<Long, List<Coords>> allCoords) throws SQLException {
+    public static void setMarked(Map<Long, List<Coords>> allCoords, boolean marking) throws SQLException {
         synchronized (VerifyRegenDB.syncDB) {
             Statement statement = VerifyRegenDB.database.createStatement();
             for (Map.Entry<Long, List<Coords>> tool : allCoords.entrySet()) {
@@ -134,8 +134,10 @@ public class DBRegen {
                             coords.y,
                             coords.z,
                             coords.worldUID.toString(),
-                            true,
-                            coords.lastBlock));
+                            marking,
+                            coords.lastBlock,
+                            !marking
+                    ));
                 }
             }
             statement.executeBatch();
@@ -143,10 +145,10 @@ public class DBRegen {
         }
     }
 
-    public static List<Coords> setUnmarked(long uid) throws SQLException {
+    public static List<Coords> marking(long uid, boolean marking) throws SQLException {
         synchronized (VerifyRegenDB.syncDB) {
             Statement statement = VerifyRegenDB.database.createStatement();
-            ResultSet response = statement.executeQuery(String.format(GET_MARKED_BLOCKS_OF_TOOL, uid, true));
+            ResultSet response = statement.executeQuery(String.format(GET_MARKED_BLOCKS_OF_TOOL, uid, !marking));
             List<Coords> coords = new ArrayList<>();
             while (response.next()) {
                 int x = response.getInt(X);
@@ -157,7 +159,7 @@ public class DBRegen {
                 coords.add(new Coords(x, y, z, worldUid, Material.EMERALD_BLOCK, block));
             }
             response.close();
-            statement.execute(String.format(UPDATE_IS_MARKED, false, uid));
+            statement.execute(String.format(UPDATE_IS_MARKED, marking, uid));
             statement.close();
             return coords;
         }

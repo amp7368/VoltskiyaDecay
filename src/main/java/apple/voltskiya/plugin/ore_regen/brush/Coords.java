@@ -23,13 +23,8 @@ public class Coords {
         this.lastBlock = lastBlock;
     }
 
-    public void mark() {
+    public void mark(boolean marking) {
         World world = Bukkit.getWorld(worldUID);
-        if (world != null) world.getBlockAt(x, y, z).setType(markerBlock);
-    }
-
-    public void unmark() {
-        World world = Bukkit.getWorld(worldUID);
-        if (world != null) world.getBlockAt(x, y, z).setType(lastBlock);
+        if (world != null) world.getBlockAt(x, y, z).setType(marking?markerBlock:lastBlock);
     }
 }

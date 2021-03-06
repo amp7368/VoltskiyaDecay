@@ -21,17 +21,17 @@ public class BrushExecution {
     public synchronized static void completeTodo() {
         final Map<Long, List<Coords>> todo = toolToImpact;
         toolToImpact = new HashMap<>();
-        Bukkit.getScheduler().scheduleSyncDelayedTask(VoltskiyaPlugin.get(), () -> markBlocks(todo), 0);
+        Bukkit.getScheduler().scheduleSyncDelayedTask(VoltskiyaPlugin.get(), () -> markBlocks(todo,true), 0);
     }
 
-    public static void markBlocks(Map<Long, List<Coords>> allCoords) {
+    public static void markBlocks(Map<Long, List<Coords>> allCoords,boolean marking) {
         for (List<Coords> coords : allCoords.values()) {
             for (Coords coord : coords) {
-                coord.mark();
+                coord.mark(marking);
             }
         }
         try {
-            DBRegen.setMarked(allCoords);
+            DBRegen.setMarked(allCoords,marking);
         } catch (SQLException throwables) {
             throwables.printStackTrace();
         }

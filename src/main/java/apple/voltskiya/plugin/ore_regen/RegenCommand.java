@@ -22,14 +22,18 @@ public class RegenCommand extends BaseCommand {
     }
 
     @Subcommand("brush")
-    public  class RegenBrushCommand extends BaseCommand {
+    public class RegenBrushCommand extends BaseCommand {
         @Subcommand("mark")
         public void markEverything(Player player) {
-            player.sendMessage("That functionality is not implemented");
+            mark(player, true);
         }
 
         @Subcommand("unmark")
-        public void paintEverything(Player player) {
+        public void unmarkEverything(Player player) {
+            mark(player, false);
+        }
+
+        private void mark(Player player, boolean marking) {
             ItemMeta meta = player.getInventory().getItemInMainHand().getItemMeta();
             if (meta == null) {
                 player.sendMessage("There is nothing in your hand");
@@ -45,8 +49,12 @@ public class RegenCommand extends BaseCommand {
                 player.sendMessage("You're not holding a valid powertool");
                 return;
             }
-            brush.unmarkAll();
-            player.sendMessage("I've painted and fully unmarked your marked locations");
+            brush.markAll(marking);
+
+            player.sendMessage(
+                    marking ? "I've marked all your painted locations" :
+                            "I've painted and fully unmarked your marked locations"
+            );
         }
     }
 }
