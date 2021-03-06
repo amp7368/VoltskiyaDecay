@@ -9,6 +9,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashMap;
 import java.util.Map;
 
 import static apple.voltskiya.plugin.DBNames.Regen.*;
@@ -51,6 +52,7 @@ public class DBRegen {
             BLOCK_COUNT
     );
     private static final String GET_TOOL_INFO = String.format("SELECT * FROM %s WHERE %s = %%d", TOOL_UID_TABLE, TOOL_UID);
+    private static final String GET_HOST_BLOCKS = String.format("SELECT * FROM %s WHERE %s = %%d", TOOL_TO_HOST_BLOCK_TABLE, TOOL_UID);
 
     public static long saveConfig(RegenConfigInstance config) throws SQLException {
         synchronized (VerifyRegenDB.syncDB) {
@@ -101,8 +103,18 @@ public class DBRegen {
             RegenConfigInstance.BrushType brushType = RegenConfigInstance.BrushType.valueOf(response.getString(BRUSH_TYPE));
             int radius = response.getInt(BRUSH_RADIUS);
             response.close();
+
+            Map<Material, Integer> hostBlocks = new HashMap<>();
+            response = statement.executeQuery(String.format(GET_HOST_BLOCKS, uid));
+            while (response.next()) {
+                hostBlocks.put(
+                        Material.getMaterial(response.getString(BLOCK_NAME)),
+                        response.getInt(BLOCK_COUNT)
+                );
+            }
             statement.close();
-            return new ActiveBrush(uid, brushType, radius, Material.EMERALD_BLOCK);
+
+            return new ActiveBrush(uid, brushType, radius, Material.EMERALD_BLOCK, hostBlocks);
         }
     }
 }

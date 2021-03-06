@@ -125,7 +125,18 @@ public class InventoryRegenItems {
                 POWERTOOL
         );
     }
-
+    public static ItemStack radius() {
+        return createItem(
+                Material.COMPARATOR,
+                1,
+                "Radius",
+                Arrays.asList(
+                        "The radius of the brush",
+                    "Left click to decrement",
+                        "Right click to increment"
+                ),RADIUS
+        );
+    }
     public static ItemStack saveConfig() {
         return createItem(
                 Material.GREEN_TERRACOTTA,

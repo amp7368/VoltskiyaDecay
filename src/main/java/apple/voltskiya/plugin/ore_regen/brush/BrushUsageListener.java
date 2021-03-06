@@ -24,6 +24,7 @@ public class BrushUsageListener implements Listener {
     public void onBrushUse(PlayerInteractEvent event) {
         ItemStack item = event.getPlayer().getInventory().getItemInMainHand();
         ItemMeta meta = item.getItemMeta();
+        if(meta == null) return; // this is possible
         Long uid = meta.getPersistentDataContainer().get(RegenConfigInstance.POWERTOOL_UID_KEY, PersistentDataType.LONG);
         if (uid != null) {
             ActiveBrush brush = ActiveBrush.getBrush(uid);

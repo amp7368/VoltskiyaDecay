@@ -5,7 +5,6 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.event.block.Action;
-import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -18,15 +17,17 @@ public class ActiveBrush {
     private final int radius;
     private final long uid;
     private final Material markerBlock;
+    private final Set<Material> hostBlocks;
     private long lastUsed = System.currentTimeMillis();
 
     private final static Map<Long, ActiveBrush> activeBrushes = new HashMap<>();
 
-    public ActiveBrush(long uid, RegenConfigInstance.BrushType brushType, int radius, Material markerBlock) {
+    public ActiveBrush(long uid, RegenConfigInstance.BrushType brushType, int radius, Material markerBlock, Map<Material, Integer> hostBlocks) {
         this.brushType = brushType;
         this.radius = radius;
         this.uid = uid;
         this.markerBlock = markerBlock;
+        this.hostBlocks = new HashSet<>(hostBlocks.keySet());
     }
 
     public synchronized static void prune() {
@@ -57,7 +58,9 @@ public class ActiveBrush {
                 for (int x = xMin; x < xMax; x++) {
                     for (int y = yMin; y < yMax; y++) {
                         for (int z = zMin; z < zMax; z++) {
-                            coords.add(new Coords(x, y, z, worldUid, markerBlock, world.getBlockAt(x, y, z).getType()));
+                            Material materialThere = world.getBlockAt(x, y, z).getType();
+                            if (this.hostBlocks.contains(materialThere))
+                                coords.add(new Coords(x, y, z, worldUid, markerBlock, materialThere));
                         }
                     }
                 }

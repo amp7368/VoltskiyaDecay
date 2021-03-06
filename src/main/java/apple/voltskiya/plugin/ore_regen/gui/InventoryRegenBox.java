@@ -23,6 +23,7 @@ import java.util.Objects;
 
 public class InventoryRegenBox implements InventoryHolder {
     public static final int POWERTOOL_TYPE_INDEX = 2;
+    private static final int POWERTOOL_RADIUS_INDEX = 6;
     @Nullable
     private final InventoryRegenBox previous;
     @Nullable
@@ -64,7 +65,7 @@ public class InventoryRegenBox implements InventoryHolder {
         inventory.setItem(3, InventoryRegenItems.nuffin());
         inventory.setItem(4, InventoryRegenItems.here(pageNumber));
         inventory.setItem(5, InventoryRegenItems.nuffin());
-        inventory.setItem(6, InventoryRegenItems.nuffin());
+        inventory.setItem(POWERTOOL_RADIUS_INDEX, InventoryRegenItems.radius());
         inventory.setItem(7, InventoryRegenItems.nuffin());
         inventory.setItem(8, InventoryRegenItems.next(next != null, pageNumber + 1));
 
@@ -151,13 +152,28 @@ public class InventoryRegenBox implements InventoryHolder {
         }
     }
 
+    public void dealWithRadiusChange(InventoryClickEvent event) {
+        ItemStack itemThere = event.getCurrentItem();
+        if (itemThere == null) {
+            throw new IllegalStateException("ToolChange was attempted without something to attempt it.");
+        }
+        if (event.isLeftClick()) {
+            itemThere.setAmount(Math.max(1, itemThere.getAmount() - 1));
+        } else if (event.isRightClick()) {
+            itemThere.setAmount(Math.min(itemThere.getMaxStackSize(), itemThere.getAmount() + 1));
+        }
+    }
+
     public void dealWithSave(InventoryClickEvent event) {
         RegenConfigInstance configPrev = previous == null ? new RegenConfigInstance() : previous.countPrevious();
         RegenConfigInstance configNext = countNext();
         RegenConfigInstance config = configPrev.add(configNext);
 
         // set info about the config
-        config.brushRadius = 1;
+        ItemStack radiusItem = inventory.getItem(POWERTOOL_RADIUS_INDEX);
+        if (radiusItem == null) throw new IllegalStateException("There is no radius specified for the brush");
+        config.brushRadius = radiusItem.getAmount();
+
         config.brushType = RegenConfigInstance.BrushType.CUBE;
 
         ItemStack powertool = inventory.getItem(POWERTOOL_TYPE_INDEX);
