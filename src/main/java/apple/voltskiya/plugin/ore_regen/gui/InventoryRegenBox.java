@@ -27,7 +27,7 @@ public class InventoryRegenBox implements InventoryHolder {
     @Nullable
     private final InventoryRegenBox previous;
     @Nullable
-    private InventoryRegenBox next = null;
+    private InventoryRegenBox next;
 
     private final int pageNumber;
 
@@ -45,6 +45,22 @@ public class InventoryRegenBox implements InventoryHolder {
         this.pageNumber = pageNumber;
         this.next = null;
         initialize();
+        copySettings(previous);
+    }
+
+    private void copySettings(InventoryRegenBox other) {
+        for (int i = 1; i < 8; i++) {
+            if (i == 4) continue;
+            inventory.setItem(i, other.inventory.getItem(i));
+        }
+    }
+
+    private void sendSettingsPrev(InventoryRegenBox other) {
+        if (previous != null) previous.copySettings(other);
+    }
+
+    private void sendSettingsNext(InventoryRegenBox other) {
+        if (next != null) next.copySettings(other);
     }
 
     public InventoryRegenBox(InventoryRegenBox other) {
@@ -150,6 +166,8 @@ public class InventoryRegenBox implements InventoryHolder {
         if (cursor != null && !cursor.getType().isAir()) {
             itemThere.setType(cursor.getType());
         }
+        sendSettingsNext(this);
+        sendSettingsPrev(this);
     }
 
     public void dealWithRadiusChange(InventoryClickEvent event) {
@@ -162,6 +180,9 @@ public class InventoryRegenBox implements InventoryHolder {
         } else if (event.isRightClick()) {
             itemThere.setAmount(Math.min(itemThere.getMaxStackSize(), itemThere.getAmount() + 1));
         }
+        sendSettingsNext(this);
+        sendSettingsPrev(this);
+
     }
 
     public void dealWithSave(InventoryClickEvent event) {

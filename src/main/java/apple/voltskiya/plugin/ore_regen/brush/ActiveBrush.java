@@ -1,17 +1,23 @@
 package apple.voltskiya.plugin.ore_regen.brush;
 
+import apple.voltskiya.plugin.VoltskiyaPlugin;
+import apple.voltskiya.plugin.ore_regen.PluginOreRegen;
 import apple.voltskiya.plugin.ore_regen.gui.RegenConfigInstance;
+import apple.voltskiya.plugin.ore_regen.sql.DBRegen;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.event.block.Action;
 import org.jetbrains.annotations.NotNull;
 
+import java.sql.SQLException;
 import java.util.*;
 
 public class ActiveBrush {
     public static final long PRUNE_PERIOD = 1000 * 60 * 10;
     private static final long MAX_RECENTLY_USED_TIME = 1000 * 60 * 10;
+    public static final int BLOCKS_TO_UPDATE_AT_ONCE = 100;
 
     private final RegenConfigInstance.BrushType brushType;
     private final int radius;
@@ -35,7 +41,19 @@ public class ActiveBrush {
     }
 
     public synchronized static ActiveBrush getBrush(long uid) {
-        return activeBrushes.get(uid);
+        ActiveBrush brush = activeBrushes.get(uid);
+        if (brush == null) {
+            try {
+                brush = DBRegen.getBrush(uid);
+            } catch (SQLException throwables) {
+                //todo
+                throwables.printStackTrace();
+                return null;
+            }
+            if (brush == null) return null;
+            ActiveBrush.addBrush(brush);
+        }
+        return brush;
     }
 
     public synchronized static void addBrush(ActiveBrush brush) {
@@ -73,5 +91,32 @@ public class ActiveBrush {
                 //todo
                 break;
         }
+    }
+
+    public void unmarkAll() {
+        List<Coords> coordsToUnmark;
+        try {
+            coordsToUnmark = DBRegen.setUnmarked(uid);
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+            return;
+        }
+        List<List<Coords>> dividedCoordsToUnmark = new ArrayList<>();
+        int i = 0;
+        List<Coords> current = new ArrayList<>(BLOCKS_TO_UPDATE_AT_ONCE);
+        for (Coords coords : coordsToUnmark) {
+            if (++i % BLOCKS_TO_UPDATE_AT_ONCE == 0) {
+                dividedCoordsToUnmark.add(current);
+                current = new ArrayList<>(BLOCKS_TO_UPDATE_AT_ONCE);
+            }
+            current.add(coords);
+        }
+        unmarkDivided(dividedCoordsToUnmark);
+    }
+
+    private void unmarkDivided(List<List<Coords>> dividedCoordsToUnmark) {
+        if (dividedCoordsToUnmark.isEmpty()) return;
+        for (Coords coords : dividedCoordsToUnmark.remove(0)) coords.unmark();
+        Bukkit.getScheduler().scheduleSyncDelayedTask(VoltskiyaPlugin.get(), () -> this.unmarkDivided(dividedCoordsToUnmark), 5);
     }
 }

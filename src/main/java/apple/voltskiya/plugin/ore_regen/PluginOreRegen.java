@@ -6,7 +6,6 @@ import apple.voltskiya.plugin.ore_regen.brush.ActiveBrush;
 import apple.voltskiya.plugin.ore_regen.brush.BrushExecution;
 import apple.voltskiya.plugin.ore_regen.brush.BrushUsageListener;
 import apple.voltskiya.plugin.ore_regen.gui.InventoryRegenListener;
-import apple.voltskiya.plugin.ore_regen.gui.RegenCommand;
 import apple.voltskiya.plugin.ore_regen.sql.VerifyRegenDB;
 
 

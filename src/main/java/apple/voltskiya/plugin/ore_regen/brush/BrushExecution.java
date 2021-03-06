@@ -2,9 +2,10 @@ package apple.voltskiya.plugin.ore_regen.brush;
 
 
 import apple.voltskiya.plugin.VoltskiyaPlugin;
+import apple.voltskiya.plugin.ore_regen.sql.DBRegen;
 import org.bukkit.Bukkit;
 
-import java.util.Collection;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,16 +20,20 @@ public class BrushExecution {
 
     public synchronized static void completeTodo() {
         final Map<Long, List<Coords>> todo = toolToImpact;
-        Collection<List<Coords>> todoWorld = todo.values();
         toolToImpact = new HashMap<>();
-        Bukkit.getScheduler().scheduleSyncDelayedTask(VoltskiyaPlugin.get(), () -> markBlock(todoWorld), 0);
+        Bukkit.getScheduler().scheduleSyncDelayedTask(VoltskiyaPlugin.get(), () -> markBlocks(todo), 0);
     }
 
-    public static void markBlock(Collection<List<Coords>> allCoords) {
-        for (List<Coords> coords : allCoords) {
+    public static void markBlocks(Map<Long, List<Coords>> allCoords) {
+        for (List<Coords> coords : allCoords.values()) {
             for (Coords coord : coords) {
                 coord.mark();
             }
+        }
+        try {
+            DBRegen.setMarked(allCoords);
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
         }
     }
 }

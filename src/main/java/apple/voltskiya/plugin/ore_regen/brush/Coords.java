@@ -27,4 +27,9 @@ public class Coords {
         World world = Bukkit.getWorld(worldUID);
         if (world != null) world.getBlockAt(x, y, z).setType(markerBlock);
     }
+
+    public void unmark() {
+        World world = Bukkit.getWorld(worldUID);
+        if (world != null) world.getBlockAt(x, y, z).setType(lastBlock);
+    }
 }

@@ -43,6 +43,8 @@ public class VerifyRegenDB {
                     "    %s          INTEGER     NOT NULL,\n" +
                     "    %s          INTEGER     NOT NULL,\n" +
                     "    %s          INTEGER     NOT NULL,\n" +
+                    "    %s          NCHAR(36)   NOT NULL,\n" +
+                    "    %s          BOOLEAN     NOT NULL,\n" +
                     "    %s VARCHAR(50) NOT NULL,\n" +
                     "    PRIMARY KEY (%s, %s, %s, %s)," +
                     " FOREIGN KEY (%s) REFERENCES %s",
@@ -50,6 +52,8 @@ public class VerifyRegenDB {
             X,
             Y,
             Z,
+            WORLD_UUID,
+            IS_MARKED,
             BLOCK_NAME,
             TOOL_UID,
             X,
