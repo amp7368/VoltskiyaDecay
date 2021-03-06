@@ -15,7 +15,6 @@ public class VerifyDecayDB {
     public static final Object syncDB = new Object();
     protected static Connection database;
 
-    private static final String DATABASE_NAME = "decay.db";
     private static final String CREATE_TABLE_FORMAT = "CREATE TABLE IF NOT EXISTS %s ( %s );";
     private static final String PLAYER_BLOCK_CONTENT = String.format(
             "    %s     INTEGER     NOT NULL,\n" +
@@ -47,7 +46,7 @@ public class VerifyDecayDB {
             try {
                 Class.forName("org.sqlite.JDBC");
                 // never close this because we're always using it
-                database = DriverManager.getConnection("jdbc:sqlite:" + voltskiyaModule.getDataFolder() + File.separator + DATABASE_NAME);
+                database = DriverManager.getConnection("jdbc:sqlite:" + voltskiyaModule.getDataFolder() + File.separator + DBNames.DATABASE_NAME);
                 verifyTables();
                 voltskiyaModule.log(Level.INFO, "The sql database for decay is connected");
             } catch (ClassNotFoundException | SQLException e) {
