@@ -25,13 +25,16 @@ public class VerifyRegenDB {
             BRUSH_RADIUS
     );
     private static final String TOOL_TO_BLOCK_CONTENT = String.format(
-            "%s    BIGINT      NOT NULL PRIMARY KEY,\n" +
+            "%s    BIGINT      NOT NULL,\n" +
                     "    %s  VARCHAR(50) NOT NULL,\n" +
                     "    %s  INTEGER     NOT NULL,\n" +
+                    "    PRIMARY KEY (%s, %s)," +
                     "    FOREIGN KEY (%s) REFERENCES %s",
             TOOL_UID,
             BLOCK_NAME,
             BLOCK_COUNT,
+            TOOL_UID,
+            BLOCK_NAME,
             TOOL_UID,
             TOOL_UID_TABLE
     );
@@ -68,7 +71,6 @@ public class VerifyRegenDB {
                 verifyTables();
                 voltskiyaModule.log(Level.INFO, "The sql database for regen is connected");
             } catch (ClassNotFoundException | SQLException e) {
-                e.printStackTrace();
                 voltskiyaModule.log(Level.SEVERE, "The sql database for regen is not properly set up");
                 database = null;
             }

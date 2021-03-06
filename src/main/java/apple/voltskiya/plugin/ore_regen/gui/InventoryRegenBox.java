@@ -18,6 +18,7 @@ import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -140,7 +141,7 @@ public class InventoryRegenBox implements InventoryHolder {
 
     public void dealWithForward(InventoryClickEvent event) {
         event.getWhoClicked().openInventory(Objects.requireNonNullElseGet(next,
-                () -> new InventoryRegenBox(this, pageNumber + 1)).getInventory());
+                () -> next = new InventoryRegenBox(this, pageNumber + 1)).getInventory());
     }
 
     public void dealWithChangeTool(InventoryClickEvent event) {
@@ -159,17 +160,28 @@ public class InventoryRegenBox implements InventoryHolder {
         RegenConfigInstance configNext = countNext();
         RegenConfigInstance config = configPrev.add(configNext);
 
+        // set info about the config
+        config.brushRadius = 1;
+        config.brushType = RegenConfigInstance.BrushType.CUBE;
+
         ItemStack powertool = inventory.getItem(POWERTOOL_TYPE_INDEX);
         ItemStack item = new ItemStack(powertool == null ? Material.STICK : powertool.getType(), 1);
         ItemMeta meta = item.getItemMeta();
         meta.displayName(Component.text("Regen Powertool - (rename me)"));
-        meta.getPersistentDataContainer().set(
-                POWERTOOL_UID_KEY,
-                PersistentDataType.LONG,
-                DBRegen.saveConfig(config)
-        );
-        item.setItemMeta(meta);
-        event.getWhoClicked().getInventory().addItem(item);
+        try {
+
+            meta.getPersistentDataContainer().set(
+                    POWERTOOL_UID_KEY,
+                    PersistentDataType.LONG,
+                    DBRegen.saveConfig(config)
+            );
+            item.setItemMeta(meta);
+            event.getWhoClicked().getInventory().addItem(item);
+            event.getWhoClicked().closeInventory(InventoryCloseEvent.Reason.PLUGIN);
+        } catch (SQLException throwables) {
+            // todo
+            throwables.printStackTrace();
+        }
     }
 
     private RegenConfigInstance countNext() {
@@ -186,8 +198,32 @@ public class InventoryRegenBox implements InventoryHolder {
 
     private RegenConfigInstance countThis() {
         Map<String, Integer> hostBlockToCount = new HashMap<>();
+        for (int i = 10; i < 17; i++) {
+            ItemStack item = inventory.getItem(i);
+            if (item != null) {
+                Material type = item.getType();
+                if (type != InventoryRegenItems.FILLER_MATERIAL && !type.isAir() && type.isBlock())
+                    hostBlockToCount.compute(type.name(), (o1, o2) -> o2 == null ? item.getAmount() : o2 + item.getAmount());
+            }
+        }
         Map<String, Integer> veinSizeBlockToCount = new HashMap<>();
+        for (int i = 19; i < 27; i++) {
+            ItemStack item = inventory.getItem(i);
+            if (item != null) {
+                Material type = item.getType();
+                if (type != InventoryRegenItems.FILLER_MATERIAL && !type.isAir() && type.isBlock())
+                    veinSizeBlockToCount.compute(type.name(), (o1, o2) -> o2 == null ? item.getAmount() : o2 + item.getAmount());
+            }
+        }
         Map<String, Integer> densityDistributionBlockToCount = new HashMap<>();
+        for (int i = 35; i < 43; i++) {
+            ItemStack item = inventory.getItem(i);
+            if (item != null) {
+                Material type = item.getType();
+                if (type != InventoryRegenItems.FILLER_MATERIAL && !type.isAir() && type.isBlock())
+                    densityDistributionBlockToCount.compute(type.name(), (o1, o2) -> o2 == null ? item.getAmount() : o2 + item.getAmount());
+            }
+        }
         return new RegenConfigInstance(hostBlockToCount, veinSizeBlockToCount, densityDistributionBlockToCount);
     }
 

@@ -1,6 +1,7 @@
 package apple.voltskiya.plugin.ore_regen.gui;
 
 import apple.voltskiya.plugin.VoltskiyaPlugin;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.event.inventory.InventoryClickEvent;
 

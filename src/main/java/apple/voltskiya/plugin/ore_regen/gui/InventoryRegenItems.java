@@ -17,6 +17,8 @@ import static apple.voltskiya.plugin.ore_regen.gui.InventoryRegenItemToAction.*;
 
 public class InventoryRegenItems {
 
+    public static final Material FILLER_MATERIAL = Material.WHITE_STAINED_GLASS_PANE;
+
     private static ItemStack createItem(Material material,
                                         int count,
                                         @Nullable String name,
