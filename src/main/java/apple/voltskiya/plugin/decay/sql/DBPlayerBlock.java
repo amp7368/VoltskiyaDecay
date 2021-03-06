@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static apple.voltskiya.plugin.decay.PluginDecay.DECAY_PERCENTAGE;
-import static apple.voltskiya.plugin.decay.sql.DBNames.PlayerBlock.*;
+import static apple.voltskiya.plugin.DBNames.PlayerBlock.*;
 
 public class DBPlayerBlock {
 
