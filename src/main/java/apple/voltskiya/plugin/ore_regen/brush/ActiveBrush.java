@@ -69,6 +69,10 @@ public class ActiveBrush {
         activeBrushes.put(brush.uid, brush);
     }
 
+    public static void pruneHeartbeat() {
+        new PruneHeartbeat().start();
+    }
+
     public void use(@NotNull Block hitBlock, @NotNull Action action) {
         lastUsed = System.currentTimeMillis();
         switch (brushType) {
@@ -191,5 +195,20 @@ public class ActiveBrush {
 
     public int getRadius() {
         return radius;
+    }
+
+    private static class PruneHeartbeat extends Thread {
+        @Override
+        public void run() {
+            while (true) {
+                try {
+                    Thread.sleep(ActiveBrush.PRUNE_PERIOD);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                System.out.println("prune");
+                ActiveBrush.prune();
+            }
+        }
     }
 }

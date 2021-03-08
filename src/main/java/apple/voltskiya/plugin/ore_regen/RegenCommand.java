@@ -1,6 +1,7 @@
 package apple.voltskiya.plugin.ore_regen;
 
 import apple.voltskiya.plugin.Permissions;
+import apple.voltskiya.plugin.VoltskiyaPlugin;
 import apple.voltskiya.plugin.ore_regen.brush.ActiveBrush;
 import apple.voltskiya.plugin.ore_regen.gui.InventoryRegenBox;
 import apple.voltskiya.plugin.ore_regen.gui.RegenConfigInstance;
@@ -21,6 +22,10 @@ import static apple.voltskiya.plugin.decay.PluginDecay.REGEN_INTERVAL;
 @CommandAlias("regen")
 @CommandPermission(Permissions.DECAY)
 public class RegenCommand extends BaseCommand {
+    public RegenCommand() {
+        VoltskiyaPlugin.get().getCommandManager().registerCommand(this);
+    }
+
     @Subcommand("heartbeat")
     public class Heartbeat extends BaseCommand {
         @Subcommand("start")

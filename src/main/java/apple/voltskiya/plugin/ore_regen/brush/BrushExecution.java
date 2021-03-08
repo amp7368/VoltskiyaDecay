@@ -10,6 +10,8 @@ import org.bukkit.Bukkit;
 import java.sql.SQLException;
 import java.util.*;
 
+import static apple.voltskiya.plugin.ore_regen.PluginOreRegen.BRUSH_EXECUTE_INTERVAL;
+
 public class BrushExecution {
     private static final int BLOCKS_PER_INTERVAL = 10000;
     private static final double DROP_IN_TPS = 3;
@@ -92,5 +94,23 @@ public class BrushExecution {
             WRITING_BUSY_SYNC_OBJECT.notify();
         }
 
+    }
+
+    public static void heartbeat() {
+        new BrushExecutionHeartbeat().start();
+    }
+
+    private static class BrushExecutionHeartbeat extends Thread{
+        @Override
+        public void run() {
+            while (true) {
+                try {
+                    Thread.sleep(BRUSH_EXECUTE_INTERVAL);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                BrushExecution.completeTodo();
+            }
+        }
     }
 }

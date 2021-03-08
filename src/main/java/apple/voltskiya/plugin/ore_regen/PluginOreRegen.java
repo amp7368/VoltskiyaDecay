@@ -6,6 +6,7 @@ import apple.voltskiya.plugin.ore_regen.brush.ActiveBrush;
 import apple.voltskiya.plugin.ore_regen.brush.BrushExecution;
 import apple.voltskiya.plugin.ore_regen.brush.BrushUsageListener;
 import apple.voltskiya.plugin.ore_regen.gui.InventoryRegenListener;
+import apple.voltskiya.plugin.ore_regen.player_intervention.RegenPlayerInterventionListener;
 import apple.voltskiya.plugin.ore_regen.regen.RegenHeartbeat;
 import apple.voltskiya.plugin.ore_regen.regen.RegenSectionManager;
 import apple.voltskiya.plugin.ore_regen.sql.VerifyRegenDB;
@@ -22,29 +23,11 @@ public class PluginOreRegen extends VoltskiyaModule {
         RegenSectionManager.initialize();
         new InventoryRegenListener();
         new BrushUsageListener();
-        VoltskiyaPlugin.get().getCommandManager().registerCommand(new RegenCommand());
+        new RegenPlayerInterventionListener();
+        new RegenCommand();
         RegenHeartbeat.startBeating();
-        new Thread(() -> {
-            while (true) {
-                try {
-                    Thread.sleep(ActiveBrush.PRUNE_PERIOD);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                System.out.println("prune");
-                ActiveBrush.prune();
-            }
-        }).start();
-        new Thread(() -> {
-            while (true) {
-                try {
-                    Thread.sleep(BRUSH_EXECUTE_INTERVAL);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                BrushExecution.completeTodo();
-            }
-        }).start();
+        ActiveBrush.pruneHeartbeat();
+        BrushExecution.heartbeat();
     }
 
     @Override
