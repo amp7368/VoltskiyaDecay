@@ -25,6 +25,6 @@ public class Coords {
 
     public void mark(boolean marking) {
         World world = Bukkit.getWorld(worldUID);
-        if (world != null) world.getBlockAt(x, y, z).setType(marking?markerBlock:lastBlock);
+        if (world != null) world.getBlockAt(x, y, z).setType(marking ? markerBlock : lastBlock);
     }
 }

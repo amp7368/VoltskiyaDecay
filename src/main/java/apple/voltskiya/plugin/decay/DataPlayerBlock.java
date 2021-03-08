@@ -10,7 +10,6 @@ import java.util.Random;
 import java.util.UUID;
 
 import static apple.voltskiya.plugin.decay.PluginDecay.DECAY_INTENSITY;
-import static apple.voltskiya.plugin.decay.PluginDecay.DEFAULT_RESISTANCE;
 
 public class DataPlayerBlock {
     private static final Random random = new Random();

@@ -2,6 +2,7 @@ package apple.voltskiya.plugin.ore_regen.brush;
 
 import apple.voltskiya.plugin.VoltskiyaPlugin;
 import apple.voltskiya.plugin.ore_regen.gui.RegenConfigInstance;
+import apple.voltskiya.plugin.ore_regen.regen.RegenSectionManager;
 import apple.voltskiya.plugin.ore_regen.sql.DBRegen;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -16,7 +17,16 @@ import java.util.*;
 public class ActiveBrush {
     public static final long PRUNE_PERIOD = 1000 * 60 * 10;
     private static final long MAX_RECENTLY_USED_TIME = 1000 * 60 * 10;
+
     public static final int BLOCKS_TO_UPDATE_AT_ONCE = 500;
+    public static final int BLOCKS_TO_UPDATE_AT_ONCE_INTERVAL = 5;
+
+    public static final Object WAIT_TO_UPDATE_OBJECT = new Object();
+
+    private static final int BRUSH_USAGE_COUNT = 100000;
+    private static final int BRUSH_USAGE_INTERVAL = 10;
+
+    public static boolean isBusy = false;
 
     private final RegenConfigInstance.BrushType brushType;
     private final int radius;
@@ -63,7 +73,6 @@ public class ActiveBrush {
         lastUsed = System.currentTimeMillis();
         switch (brushType) {
             case CUBE:
-                List<Coords> coords = new ArrayList<>();
                 int xMin = hitBlock.getX() - radius + 1;
                 int yMin = hitBlock.getY() - radius + 1;
                 int zMin = hitBlock.getZ() - radius + 1;
@@ -71,17 +80,7 @@ public class ActiveBrush {
                 int yMax = hitBlock.getY() + radius;
                 int zMax = hitBlock.getZ() + radius;
                 World world = hitBlock.getWorld();
-                UUID worldUid = world.getUID();
-                for (int x = xMin; x < xMax; x++) {
-                    for (int y = yMin; y < yMax; y++) {
-                        for (int z = zMin; z < zMax; z++) {
-                            Material materialThere = world.getBlockAt(x, y, z).getType();
-                            if (this.hostBlocks.contains(materialThere))
-                                coords.add(new Coords(x, y, z, worldUid, markerBlock, materialThere));
-                        }
-                    }
-                }
-                BrushExecution.addTodo(uid, coords);
+                addCubeBlocks(xMin, yMin, zMin, xMax, yMax, zMax, xMin, yMin, zMin, world);
                 break;
             case SPHERE:
                 //todo
@@ -92,10 +91,61 @@ public class ActiveBrush {
         }
     }
 
-    public void markAll(boolean marking) {
+    private void addCubeBlocks(int xMin, int yMin, int zMin, int xMax, int yMax, int zMax, int currentX, int currentY, int currentZ, World world) {
+        UUID worldUid = world.getUID();
+        List<Coords> coords = new ArrayList<>();
+        int count = 0;
+        boolean isFinished = true;
+        boolean firstTime = true;
+        addLoop:
+        for (int x = xMin; x < xMax; x++) {
+            if (firstTime) x = currentX;
+            for (int y = yMin; y < yMax; y++) {
+                if (firstTime) y = currentY;
+                for (int z = zMin; z < zMax; z++) {
+                    if (firstTime) {
+                        firstTime = false;
+                        z = currentZ;
+                    }
+                    Material materialThere = world.getBlockAt(x, y, z).getType();
+                    if (this.hostBlocks.contains(materialThere))
+                        coords.add(new Coords(x, y, z, worldUid, markerBlock, materialThere));
+                    if (++count == BRUSH_USAGE_COUNT) {
+                        currentX = x;
+                        currentY = y;
+                        currentZ = z;
+                        isFinished = false;
+                        break addLoop;
+                    }
+                }
+            }
+        }
+        BrushExecution.addTodo(uid, coords);
+        if (!isFinished) {
+            int finalCurrentX = currentX;
+            int finalCurrentY = currentY;
+            int finalCurrentZ = currentZ;
+            Bukkit.getScheduler().scheduleSyncDelayedTask(
+                    VoltskiyaPlugin.get(),
+                    () -> addCubeBlocks(xMin, yMin, zMin, xMax, yMax, zMax, finalCurrentX, finalCurrentY, finalCurrentZ, world),
+                    BRUSH_USAGE_INTERVAL
+            );
+        }
+    }
+
+    public void markAll(boolean marking, Runnable afterFinish) {
+        synchronized (WAIT_TO_UPDATE_OBJECT) {
+            while (isBusy) {
+                try {
+                    WAIT_TO_UPDATE_OBJECT.wait();
+                } catch (InterruptedException ignored) {
+                }
+            }
+            isBusy = true;
+        }
         List<Coords> coordsToUnmark;
         try {
-            coordsToUnmark = DBRegen.marking(uid,marking);
+            coordsToUnmark = DBRegen.getMarking(uid, marking);
         } catch (SQLException throwables) {
             throwables.printStackTrace();
             return;
@@ -111,12 +161,35 @@ public class ActiveBrush {
             current.add(coords);
         }
         dividedCoordsToMark.add(current);
-        markDivided(dividedCoordsToMark,marking);
+        markDivided(dividedCoordsToMark, marking, afterFinish);
     }
 
-    private void markDivided(List<List<Coords>> dividedCoordsTomark,boolean marking) {
-        if (dividedCoordsTomark.isEmpty()) return;
-        for (Coords coords : dividedCoordsTomark.remove(0)) coords.mark(marking);
-        Bukkit.getScheduler().scheduleSyncDelayedTask(VoltskiyaPlugin.get(), () -> this.markDivided(dividedCoordsTomark,marking), 5);
+    private void markDivided(List<List<Coords>> dividedCoordsTomark, boolean marking, Runnable afterFinish) {
+        if (dividedCoordsTomark.isEmpty()) {
+            afterFinish.run();
+            synchronized (WAIT_TO_UPDATE_OBJECT) {
+                isBusy = false;
+                WAIT_TO_UPDATE_OBJECT.notify();
+            }
+            return;
+        }
+
+        // make this happen on the main thread
+        Bukkit.getScheduler().scheduleSyncDelayedTask(VoltskiyaPlugin.get(), () -> {
+            if (!dividedCoordsTomark.isEmpty())
+                for (Coords coords : dividedCoordsTomark.remove(0)) coords.mark(marking);
+        }, 0);
+
+        // we're not on the main thread
+        try {
+            Thread.sleep(BLOCKS_TO_UPDATE_AT_ONCE_INTERVAL);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        this.markDivided(dividedCoordsTomark, marking, afterFinish);
+    }
+
+    public int getRadius() {
+        return radius;
     }
 }

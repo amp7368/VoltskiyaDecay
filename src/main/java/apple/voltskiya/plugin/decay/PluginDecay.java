@@ -14,6 +14,9 @@ public class PluginDecay extends VoltskiyaModule {
     public static final int SUPPORT_RADIUS = 7;
     public static float DECAY_INTENSITY = .002f;
 
+    public static long REGEN_INTERVAL = 200;
+    public static double REGEN_INTENITY = 100;
+
     private static PluginDecay instance;
 
     public static VoltskiyaModule get() {
@@ -25,7 +28,6 @@ public class PluginDecay extends VoltskiyaModule {
         instance = this;
         VerifyDecayDB.initialize();
         new DecayBlockPlaceListener();
-        DecayHeartbeat.stopBeating();
         DecayHeartbeat.startBeating();
         VoltskiyaPlugin.get().getCommandManager().registerCommand(new DecayCommand());
     }

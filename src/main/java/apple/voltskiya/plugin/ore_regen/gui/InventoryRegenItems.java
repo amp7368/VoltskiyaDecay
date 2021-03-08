@@ -128,7 +128,7 @@ public class InventoryRegenItems {
     public static ItemStack radius() {
         return createItem(
                 Material.COMPARATOR,
-                1,
+                5,
                 "Radius",
                 Arrays.asList(
                         "The radius of the brush",

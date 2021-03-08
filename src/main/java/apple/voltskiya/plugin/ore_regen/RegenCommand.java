@@ -4,6 +4,7 @@ import apple.voltskiya.plugin.Permissions;
 import apple.voltskiya.plugin.ore_regen.brush.ActiveBrush;
 import apple.voltskiya.plugin.ore_regen.gui.InventoryRegenBox;
 import apple.voltskiya.plugin.ore_regen.gui.RegenConfigInstance;
+import apple.voltskiya.plugin.ore_regen.regen.RegenHeartbeat;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.CommandPermission;
@@ -13,16 +14,59 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.Nullable;
 
+import static apple.voltskiya.plugin.decay.PluginDecay.REGEN_INTENITY;
+import static apple.voltskiya.plugin.decay.PluginDecay.REGEN_INTERVAL;
+
+
 @CommandAlias("regen")
 @CommandPermission(Permissions.DECAY)
 public class RegenCommand extends BaseCommand {
-    @Subcommand("create")
-    public void createRegenInv(Player player) {
-        player.openInventory(new InventoryRegenBox().getInventory());
+    @Subcommand("heartbeat")
+    public class Heartbeat extends BaseCommand {
+        @Subcommand("start")
+        public void heartbeatStart() {
+            RegenHeartbeat.startBeating();
+        }
+
+        @Subcommand("stop")
+        public void heartbeatStop() {
+            RegenHeartbeat.stopBeating();
+        }
+    }
+
+    @Subcommand("intensity")
+    public class Intensity extends BaseCommand {
+        @Subcommand("set")
+        public void setIntensity(Player player, double val) {
+            player.sendMessage(String.valueOf(REGEN_INTENITY = val));
+        }
+
+        @Subcommand("get")
+        public void getIntensity(Player player) {
+            player.sendMessage(String.valueOf(REGEN_INTENITY));
+        }
+    }
+
+    @Subcommand("interval")
+    public class Interval extends BaseCommand {
+        @Subcommand("set")
+        public void setInterval(Player player, long val) {
+            player.sendMessage(String.valueOf(REGEN_INTERVAL = val));
+        }
+
+        @Subcommand("get")
+        public void getInterval(Player player) {
+            player.sendMessage(String.valueOf(REGEN_INTERVAL));
+        }
     }
 
     @Subcommand("brush")
     public class RegenBrushCommand extends BaseCommand {
+        @Subcommand("create")
+        public void createRegenInv(Player player) {
+            player.openInventory(new InventoryRegenBox().getInventory());
+        }
+
         @Subcommand("mark")
         public void markEverything(Player player) {
             mark(player, true);
@@ -49,12 +93,15 @@ public class RegenCommand extends BaseCommand {
                 player.sendMessage("You're not holding a valid powertool");
                 return;
             }
-            brush.markAll(marking);
-
-            player.sendMessage(
-                    marking ? "I've marked all your painted locations" :
-                            "I've painted and fully unmarked your marked locations"
-            );
+            new Thread(() ->
+                    brush.markAll(marking, () -> {
+                                player.sendMessage(
+                                        marking ? "I've marked all your painted locations" :
+                                                "I've painted and fully unmarked your marked locations"
+                                );
+                            }
+                    )
+            ).start();
         }
     }
 }

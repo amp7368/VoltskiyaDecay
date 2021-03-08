@@ -4,13 +4,14 @@ import apple.voltskiya.plugin.VoltskiyaPlugin;
 import org.bukkit.NamespacedKey;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public class RegenConfigInstance {
     public static final NamespacedKey POWERTOOL_UID_KEY = new NamespacedKey(VoltskiyaPlugin.get(), "powertool_regen_uid");
     private final Map<String, Integer> hostBlockToCount;
-    private final Map<String, Integer> veinSizeBlockToCount;
+    private final Map<String, List<Integer>> veinSizeBlockToCount;
     private final Map<String, Integer> densityDistributionBlockToCount;
     public BrushType brushType = null;
     public int brushRadius = 0;
@@ -21,7 +22,7 @@ public class RegenConfigInstance {
         this.densityDistributionBlockToCount = new HashMap<>();
     }
 
-    public RegenConfigInstance(Map<String, Integer> hostBlockToCount, Map<String, Integer> veinSizeBlockToCount, Map<String, Integer> densityDistributionBlockToCount) {
+    public RegenConfigInstance(Map<String, Integer> hostBlockToCount, Map<String, List<Integer>> veinSizeBlockToCount, Map<String, Integer> densityDistributionBlockToCount) {
         this.hostBlockToCount = hostBlockToCount;
         this.veinSizeBlockToCount = veinSizeBlockToCount;
         this.densityDistributionBlockToCount = densityDistributionBlockToCount;
@@ -29,13 +30,17 @@ public class RegenConfigInstance {
 
     public RegenConfigInstance add(RegenConfigInstance other) {
         final Map<String, Integer> hostBlockToCount = new HashMap<>(this.hostBlockToCount);
-        final Map<String, Integer> veinSizeBlockToCount = new HashMap<>(this.veinSizeBlockToCount);
+        final Map<String, List<Integer>> veinSizeBlockToCount = new HashMap<>(this.veinSizeBlockToCount);
         final Map<String, Integer> densityDistributionBlockToCount = new HashMap<>(this.densityDistributionBlockToCount);
         for (Map.Entry<String, Integer> kv : other.hostBlockToCount.entrySet()) {
             hostBlockToCount.compute(kv.getKey(), (o1, o2) -> o2 == null ? kv.getValue() : kv.getValue() + o2);
         }
-        for (Map.Entry<String, Integer> kv : other.veinSizeBlockToCount.entrySet()) {
-            veinSizeBlockToCount.compute(kv.getKey(), (o1, o2) -> o2 == null ? kv.getValue() : kv.getValue() + o2);
+        for (Map.Entry<String, List<Integer>> kv : other.veinSizeBlockToCount.entrySet()) {
+            veinSizeBlockToCount.compute(kv.getKey(), (k, v) -> {
+                if (v == null) return kv.getValue();
+                else v.addAll(kv.getValue());
+                return v;
+            });
         }
         for (Map.Entry<String, Integer> kv : other.densityDistributionBlockToCount.entrySet()) {
             densityDistributionBlockToCount.compute(kv.getKey(), (o1, o2) -> o2 == null ? kv.getValue() : kv.getValue() + o2);
@@ -53,7 +58,7 @@ public class RegenConfigInstance {
         return hostBlockToCount.entrySet();
     }
 
-    public Set<Map.Entry<String, Integer>> getVeinSizeBlockToCount() {
+    public Set<Map.Entry<String, List<Integer>>> getVeinSizeBlockToCount() {
         return veinSizeBlockToCount.entrySet();
     }
 
