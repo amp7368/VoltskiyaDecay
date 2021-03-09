@@ -16,10 +16,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class InventoryRegenBox implements InventoryHolder {
     public static final int POWERTOOL_TYPE_INDEX = 2;
@@ -239,17 +236,19 @@ public class InventoryRegenBox implements InventoryHolder {
                     hostBlockToCount.compute(type.name(), (o1, o2) -> o2 == null ? item.getAmount() : o2 + item.getAmount());
             }
         }
-        Map<String, Integer> veinSizeBlockToCount = new HashMap<>();
-        for (int i = 19; i < 27; i++) {
+        Map<String, List<Integer>> veinSizeBlockToCount = new HashMap<>();
+        for (int i = 19; i < 26; i++) {
             ItemStack item = inventory.getItem(i);
             if (item != null) {
                 Material type = item.getType();
-                if (type != InventoryRegenItems.FILLER_MATERIAL && !type.isAir() && type.isBlock())
-                    veinSizeBlockToCount.compute(type.name(), (o1, o2) -> o2 == null ? item.getAmount() : o2 + item.getAmount());
+                if (type != InventoryRegenItems.FILLER_MATERIAL && !type.isAir() && type.isBlock()) {
+                    veinSizeBlockToCount.putIfAbsent(type.name(), new ArrayList<>());
+                    veinSizeBlockToCount.get(type.name()).add(item.getAmount());
+                }
             }
         }
         Map<String, Integer> densityDistributionBlockToCount = new HashMap<>();
-        for (int i = 35; i < 43; i++) {
+        for (int i = 28; i < 35; i++) {
             ItemStack item = inventory.getItem(i);
             if (item != null) {
                 Material type = item.getType();

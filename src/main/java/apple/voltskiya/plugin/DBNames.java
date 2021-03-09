@@ -1,9 +1,9 @@
 package apple.voltskiya.plugin;
 
 public class DBNames {
-    public static final String DATABASE_NAME = "decay.db";
 
     public static class Regen {
+        public static final String DATABASE_NAME = "regen.db";
         public static final String TOOL_UID_TABLE = "tool_uid_info";
         public static final String TOOL_TO_HOST_BLOCK_TABLE = "tool_to_host_block";
         public static final String TOOL_TO_VEIN_BLOCK_TABLE = "tool_to_vein_block";
@@ -23,9 +23,12 @@ public class DBNames {
         public static final String Z = "z";
         public static final String WORLD_UUID = "world_uid";
         public static final String IS_MARKED = "is_marked";
+        public static final String VEIN_INDEX = "vein_index";
+        public static final String IS_ORE = "is_ore";
     }
 
     public static class PlayerBlock {
+        public static final String DATABASE_NAME = "decay.db";
         public static final String X = "x";
         public static final String Y = "y";
         public static final String Z = "z";

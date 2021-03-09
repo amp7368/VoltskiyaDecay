@@ -46,7 +46,8 @@ public class VerifyDecayDB {
             try {
                 Class.forName("org.sqlite.JDBC");
                 // never close this because we're always using it
-                database = DriverManager.getConnection("jdbc:sqlite:" + voltskiyaModule.getDataFolder() + File.separator + DBNames.DATABASE_NAME);
+                database = DriverManager.getConnection("jdbc:sqlite:" + voltskiyaModule.getDataFolder() + File.separator + DBNames.PlayerBlock.DATABASE_NAME);
+                database.setClientInfo("maxActive", String.valueOf(1));
                 verifyTables();
                 voltskiyaModule.log(Level.INFO, "The sql database for decay is connected");
             } catch (ClassNotFoundException | SQLException e) {
