@@ -204,7 +204,7 @@ public class RegenSectionInfo {
                 c.setY(c.getY() + y);
                 c.setZ(c.getZ() + z);
                 try {
-                    DBRegen.setBlock(uid, c.getX(), c.getY(), c.getZ(), worldUid, blockType, oldBlockType);
+                    DBRegen.setOre(uid, c.getX(), c.getY(), c.getZ(), worldUid, blockType, oldBlockType);
                 } catch (SQLException throwables) {
                     throwables.printStackTrace();
                 }

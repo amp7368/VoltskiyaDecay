@@ -61,7 +61,7 @@ public class DBRegen {
     private static final String GET_SINGLE_HOST_BLOCKS = String.format("SELECT * FROM %s WHERE %s = %%d", TOOL_TO_HOST_BLOCK_TABLE, TOOL_UID);
     private static final String INSERT_SECTION_TO_BLOCK = String.format("INSERT INTO %s (%s,%s,%s,%s,%s,%s,%s,%s) VALUES " +
                     " ( %%d, %%d, %%d, %%d, '%%s', %%b, %%b, '%%s') ON CONFLICT(%s,%s,%s,%s) DO UPDATE SET %s = %%b", SECTION_TO_BLOCK_TABLE,
-            TOOL_UID, X, Y, Z, WORLD_UUID, IS_MARKED, IS_ORE, BLOCK_NAME, TOOL_UID, X, Y, Z, IS_MARKED);
+            TOOL_UID, X, Y, Z, WORLD_UUID, IS_MARKED, IS_ORE, BLOCK_NAME, X, Y, Z, WORLD_UUID, IS_MARKED);
     private static final String GET_MARKED_BLOCKS_OF_TOOL = String.format("SELECT * FROM %s WHERE %s = %%d AND %s = %%b", SECTION_TO_BLOCK_TABLE, TOOL_UID, IS_MARKED);
     public static final String UPDATE_IS_MARKED = String.format("UPDATE %s SET %s = %%b where %s = %%d", SECTION_TO_BLOCK_TABLE, IS_MARKED, TOOL_UID);
 
@@ -148,6 +148,31 @@ public class DBRegen {
         }
     }
 
+    public static void regen(long uid, RegenSectionInfo.OreVein[] oreChoices) throws SQLException {
+        synchronized (VerifyDecayDB.syncDB) {
+            Statement statement = VerifyRegenDB.database.createStatement();
+            final String sql = String.format(String.format(
+                    "SELECT * FROM %s WHERE %s = %%d AND %s = FALSE ORDER BY random() LIMIT %%d;",
+                    SECTION_TO_BLOCK_TABLE,
+                    TOOL_UID,
+                    IS_ORE
+            ), uid, oreChoices.length);
+            ResultSet response = statement.executeQuery(sql);
+            int i = 0;
+            while (response.next()) {
+                if (oreChoices.length == i || oreChoices[i] == null) break;
+                int x = response.getInt(X);
+                int y = response.getInt(Y);
+                int z = response.getInt(Z);
+                UUID worldUid = UUID.fromString(response.getString(WORLD_UUID));
+                Material blockType = Material.valueOf(response.getString(BLOCK_NAME));
+                oreChoices[i++].setCoords(x, y, z, worldUid, blockType);
+            }
+            updateSectionInfoDB(uid);
+        }
+    }
+
+
     public static void setMarked(Map<Long, List<Coords>> allCoords, boolean marking) throws SQLException {
         synchronized (VerifyDecayDB.syncDB) {
             VerifyRegenDB.database.setAutoCommit(false);
@@ -184,26 +209,6 @@ public class DBRegen {
         }
     }
 
-    public static List<Coords> getMarking(long uid, boolean marking) throws SQLException {
-        synchronized (VerifyDecayDB.syncDB) {
-            Statement statement = VerifyRegenDB.database.createStatement();
-            ResultSet response = statement.executeQuery(String.format(GET_MARKED_BLOCKS_OF_TOOL, uid, !marking));
-            List<Coords> coords = new ArrayList<>();
-            while (response.next()) {
-                int x = response.getInt(X);
-                int y = response.getInt(Y);
-                int z = response.getInt(Z);
-                UUID worldUid = UUID.fromString(response.getString(WORLD_UUID));
-                Material block = Material.getMaterial(response.getString(BLOCK_NAME));
-                coords.add(new Coords(x, y, z, worldUid, Material.EMERALD_BLOCK, block));
-            }
-            response.close();
-            statement.execute(String.format(UPDATE_IS_MARKED, marking, uid));
-            statement.close();
-            updateSectionInfoDB(uid);
-            return coords;
-        }
-    }
 
     private static void updateSectionInfoDB(long toolUid) throws SQLException {
         synchronized (VerifyDecayDB.syncDB) {
@@ -244,9 +249,123 @@ public class DBRegen {
                         )
                 );
             }
-            RegenSectionManager.updateSectionInfo(toolUid,blocks);
+            RegenSectionManager.updateSectionInfo(toolUid, blocks);
         }
 
+    }
+
+
+    public static void setOre(long uid, int x, int y, int z, UUID worldUID, Material blockType, Material oldBlockType) throws SQLException {
+        synchronized (VerifyDecayDB.syncDB) {
+            Statement statement = VerifyRegenDB.database.createStatement();
+            statement.execute(String.format(
+                    String.format(
+                            "INSERT INTO %s (%s, %s, %s) " +
+                                    "VALUES (%%d, '%%s', 1) " +
+                                    "ON CONFLICT (%s, %s) DO UPDATE SET %s = %s + 1",
+                            SECTION_INFO_TABLE, TOOL_UID, BLOCK_NAME, BLOCK_COUNT, TOOL_UID, BLOCK_NAME, BLOCK_COUNT, BLOCK_COUNT
+                    ), uid, blockType.name()
+            ));
+            statement.execute(String.format(
+                    String.format(
+                            "INSERT INTO %s (%s, %s, %s) " +
+                                    "VALUES (%%d, '%%s', -1) " +
+                                    "ON CONFLICT (%s, %s) DO UPDATE SET %s = %s - 1",
+                            SECTION_INFO_TABLE, TOOL_UID, BLOCK_NAME, BLOCK_COUNT, TOOL_UID, BLOCK_NAME, BLOCK_COUNT, BLOCK_COUNT
+                    ), uid, oldBlockType.name()
+            ));
+            statement.execute(String.format(
+                    String.format("UPDATE %s\n" +
+                                    "SET %s = false, %s = '%%s', %s = true\n" +
+                                    "WHERE %s = %%d AND %s = %%d AND %s = %%d AND %s = '%%s' AND %s = '%%s'",
+                            SECTION_TO_BLOCK_TABLE,
+                            IS_MARKED,
+                            BLOCK_NAME,
+                            IS_ORE,
+                            TOOL_UID,
+                            X,
+                            Y,
+                            Z,
+                            WORLD_UUID
+                    ),
+                    blockType.name(),
+                    uid,
+                    x,
+                    y,
+                    z,
+                    worldUID
+            ));
+        }
+    }
+
+    public static void setBlock(UUID world, int x, int y, int z, Material oldBlock, Material newBlock) throws SQLException {
+        synchronized (VerifyDecayDB.syncDB) {
+            Statement statement = VerifyRegenDB.database.createStatement();
+            ResultSet response = statement.executeQuery(
+                    String.format(
+                            String.format("SELECT %s FROM %s " +
+                                            "WHERE %s = %%d AND %s = %%d AND %s = %%d AND %s = '%%s'",
+                                    TOOL_UID, SECTION_TO_BLOCK_TABLE, X, Y, Z, WORLD_UUID
+                            ), x, y, z, world.toString()
+                    )
+            );
+            if (!response.isClosed()) {
+                long toolUid = response.getLong(TOOL_UID);
+                statement.execute(String.format(
+                        String.format("UPDATE %s\n" +
+                                        "SET %s = false, %s = '%%s'\n" +
+                                        "WHERE %s = %%d AND %s = %%d AND %s = %%d AND %s = '%%s'",
+                                SECTION_TO_BLOCK_TABLE,
+                                IS_ORE,
+                                BLOCK_NAME,
+                                X,
+                                Y,
+                                Z,
+                                WORLD_UUID
+                        ),
+                        newBlock,
+                        x,
+                        y,
+                        z,
+                        world.toString()
+                ));
+                statement.execute(String.format(
+                        String.format("INSERT INTO %s (%s, %s, %s)\n" +
+                                        "VALUES (%%d, '%%s', -1)\n" +
+                                        "ON CONFLICT (%s,%s) DO UPDATE SET %s = %s - 1;\n",
+                                SECTION_INFO_TABLE, TOOL_UID, BLOCK_NAME, BLOCK_COUNT, TOOL_UID, BLOCK_NAME, BLOCK_COUNT, BLOCK_COUNT
+                        ), toolUid, oldBlock.name()
+                ));
+                statement.execute(String.format(
+                        String.format("INSERT INTO %s (%s, %s, %s)\n" +
+                                        "VALUES (%%d, '%%s', 1)\n" +
+                                        "ON CONFLICT (%s,%s) DO UPDATE SET %s = %s + 1;\n",
+                                SECTION_INFO_TABLE, TOOL_UID, BLOCK_NAME, BLOCK_COUNT, TOOL_UID, BLOCK_NAME, BLOCK_COUNT, BLOCK_COUNT
+                        ), toolUid, newBlock.name()
+                ));
+            }
+        }
+    }
+
+    public static List<Coords> getMarking(long uid, boolean marking) throws SQLException {
+        synchronized (VerifyDecayDB.syncDB) {
+            Statement statement = VerifyRegenDB.database.createStatement();
+            ResultSet response = statement.executeQuery(String.format(GET_MARKED_BLOCKS_OF_TOOL, uid, !marking));
+            List<Coords> coords = new ArrayList<>();
+            while (response.next()) {
+                int x = response.getInt(X);
+                int y = response.getInt(Y);
+                int z = response.getInt(Z);
+                UUID worldUid = UUID.fromString(response.getString(WORLD_UUID));
+                Material block = Material.getMaterial(response.getString(BLOCK_NAME));
+                coords.add(new Coords(x, y, z, worldUid, Material.EMERALD_BLOCK, block));
+            }
+            response.close();
+            statement.execute(String.format(UPDATE_IS_MARKED, marking, uid));
+            statement.close();
+            updateSectionInfoDB(uid);
+            return coords;
+        }
     }
 
     public static Set<RegenSectionInfo> getSections() throws SQLException {
@@ -287,86 +406,5 @@ public class DBRegen {
         for (RegenSectionInfoBuilder builder : regenSectionInfoBuilders.values())
             regenSectionInfos.add(builder.build());
         return regenSectionInfos;
-    }
-
-    public static void regen(long uid, RegenSectionInfo.OreVein[] oreChoices) throws SQLException {
-        synchronized (VerifyDecayDB.syncDB) {
-            Statement statement = VerifyRegenDB.database.createStatement();
-            final String sql = String.format(String.format(
-                    "SELECT * FROM %s WHERE %s = %%d AND %s = FALSE ORDER BY random() LIMIT %%d;",
-                    SECTION_TO_BLOCK_TABLE,
-                    TOOL_UID,
-                    IS_ORE
-            ), uid, oreChoices.length);
-            ResultSet response = statement.executeQuery(sql);
-            int i = 0;
-            while (response.next()) {
-                if (oreChoices.length == i || oreChoices[i] == null) break;
-                int x = response.getInt(X);
-                int y = response.getInt(Y);
-                int z = response.getInt(Z);
-                UUID worldUid = UUID.fromString(response.getString(WORLD_UUID));
-                Material blockType = Material.valueOf(response.getString(BLOCK_NAME));
-                oreChoices[i++].setCoords(x, y, z, worldUid, blockType);
-            }
-            updateSectionInfoDB(uid);
-        }
-    }
-
-    public static void setBlock(long uid, int x, int y, int z, UUID worldUID, Material blockType, Material oldBlockType) throws SQLException {
-        synchronized (VerifyDecayDB.syncDB) {
-            Statement statement = VerifyRegenDB.database.createStatement();
-            statement.execute(String.format(
-                    String.format(
-                            "INSERT INTO %s (%s, %s, %s) " +
-                                    "VALUES (%%d, '%%s', 0) " +
-                                    "ON CONFLICT (%s, %s) DO NOTHING",
-                            SECTION_INFO_TABLE, TOOL_UID, BLOCK_NAME, BLOCK_COUNT, TOOL_UID, BLOCK_NAME
-                    ), uid, blockType.name()
-            ));
-            statement.execute(String.format(
-                    String.format(
-                            "INSERT INTO %s (%s, %s, %s) " +
-                                    "VALUES (%%d, '%%s', 0) " +
-                                    "ON CONFLICT (%s, %s) DO NOTHING",
-                            SECTION_INFO_TABLE, TOOL_UID, BLOCK_NAME, BLOCK_COUNT, TOOL_UID, BLOCK_NAME
-                    ), uid, oldBlockType.name()
-            ));
-            final String sql = String.format(
-                    String.format("UPDATE %s\n" +
-                            "SET %s = %s + 1\n" +
-                            "WHERE %s = %%d\n" +
-                            "  AND %s = '%%s';", SECTION_INFO_TABLE, BLOCK_COUNT, BLOCK_COUNT, TOOL_UID, BLOCK_NAME
-                    ), uid, blockType.name());
-            statement.execute(sql);
-            statement.execute(String.format(
-                    String.format("UPDATE %s\n" +
-                            "SET %s = %s - 1\n" +
-                            "WHERE %s = %%d\n" +
-                            "  AND %s = '%%s';", SECTION_INFO_TABLE, BLOCK_COUNT, BLOCK_COUNT, TOOL_UID, BLOCK_NAME
-                    ), uid, oldBlockType.name())
-            );
-            statement.execute(String.format(
-                    String.format("UPDATE %s\n" +
-                                    "SET %s = false, %s = '%%s', %s = true\n" +
-                                    "WHERE %s = %%d AND %s = %%d AND %s = %%d AND %s = '%%s' AND %s = '%%s'",
-                            SECTION_TO_BLOCK_TABLE,
-                            IS_MARKED,
-                            BLOCK_NAME,
-                            IS_ORE,
-                            TOOL_UID,
-                            X,
-                            Y,
-                            Z,
-                            WORLD_UUID
-                    ),
-                    blockType.name(),
-                    uid,
-                    x,
-                    y,
-                    z,
-                    worldUID
-            ));
-        }
     }
 }

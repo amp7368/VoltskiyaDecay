@@ -34,8 +34,8 @@ public class RegenSectionManager {
 
     }
 
-    public synchronized static void updateSectionInfo(long uid, Material blockName, int change) {
-        RegenSectionInfo sectionInfo = sectionInfos.get(uid);
+    public static void updateSectionInfo(long toolUid, Map<Material, Integer> blocks) {
+        final RegenSectionInfo sectionInfo = sectionInfos.get(toolUid);
         if (sectionInfo == null) {
             Set<RegenSectionInfo> sectionInfos1;
             try {
@@ -50,15 +50,11 @@ public class RegenSectionManager {
                 sectionInfos.put(sInfo.getUid(), sInfo);
                 totalBlocks += sInfo.getTotalActualBlocks();
             }
-        } else sectionInfo.update(blockName, change);
-    }
-
-    public static void updateSectionInfo(long toolUid, Map<Material, Integer> blocks) {
-        final RegenSectionInfo sectionInfo = sectionInfos.get(toolUid);
+        }else{
         totalBlocks -= sectionInfo.getTotalActualBlocks();
         sectionInfo.update(blocks);
         totalBlocks += sectionInfo.getTotalActualBlocks();
-    }
+    }}
 
     public synchronized static void random() {
         if (sectionInfos.isEmpty()) return;

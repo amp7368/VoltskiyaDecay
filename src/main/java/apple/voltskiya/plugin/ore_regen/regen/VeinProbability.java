@@ -26,7 +26,7 @@ public class VeinProbability {
     }
 
     public int choose() {
-        double choice = random.nextDouble();
+        double choice = random.nextDouble() * getTotalProbability();
         for (Map.Entry<Integer, Double> entry : sizeToProbability.entrySet()) {
             if (choice < entry.getValue()) {
                 return entry.getKey();

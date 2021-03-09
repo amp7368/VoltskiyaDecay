@@ -15,7 +15,7 @@ public class PluginDecay extends VoltskiyaModule {
     public static float DECAY_INTENSITY = .002f;
 
     public static long REGEN_INTERVAL = 200;
-    public static double REGEN_INTENITY = 100;
+    public static double REGEN_INTENITY = 10;
 
     private static PluginDecay instance;
 

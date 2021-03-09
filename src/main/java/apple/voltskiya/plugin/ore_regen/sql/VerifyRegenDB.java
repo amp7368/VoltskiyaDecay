@@ -64,7 +64,8 @@ public class VerifyRegenDB {
                     "    %s          BOOLEAN     NOT NULL,\n" +
                     "    %s          VARCHAR(50) NOT NULL,\n" +
                     "    %s          BOOLEAN     NOT NULL,\n" +
-                    "    PRIMARY KEY (%s, %s, %s, %s)," +
+                    "    PRIMARY KEY (%s, %s, %s, %s, %s)," +
+                    "    UNIQUE      (%s, %s, %s, %s)," +
                     " FOREIGN KEY (%s) REFERENCES %s",
             TOOL_UID,
             X,
@@ -74,10 +75,18 @@ public class VerifyRegenDB {
             IS_MARKED,
             IS_ORE,
             BLOCK_NAME,
+
             TOOL_UID,
             X,
             Y,
             Z,
+            WORLD_UUID,
+
+            X,
+            Y,
+            Z,
+            WORLD_UUID,
+
             TOOL_UID,
             TOOL_UID_TABLE
     );
