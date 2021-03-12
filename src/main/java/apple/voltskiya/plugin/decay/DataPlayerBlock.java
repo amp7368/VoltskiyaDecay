@@ -1,15 +1,17 @@
 package apple.voltskiya.plugin.decay;
 
 import apple.voltskiya.plugin.decay.sql.DBPlayerBlock;
+import apple.voltskiya.plugin.decay.sql.PlayerBlockMonitor;
 import apple.voltskiya.plugin.decay.sql.VerifyDecayDB;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.World;
 
 import java.sql.SQLException;
 import java.util.Random;
 import java.util.UUID;
 
-import static apple.voltskiya.plugin.decay.PluginDecay.DECAY_INTENSITY;
+import static apple.voltskiya.plugin.ore_regen.PluginOreRegen.DECAY_INTENSITY;
 
 public class DataPlayerBlock {
     private static final Random random = new Random();
@@ -34,7 +36,7 @@ public class DataPlayerBlock {
     }
 
     public boolean isDecay() {
-        return random.nextFloat() < DECAY_INTENSITY/effectiveStrength;
+        return random.nextFloat() < DECAY_INTENSITY / effectiveStrength;
     }
 
     public void decay() {
@@ -43,9 +45,11 @@ public class DataPlayerBlock {
         System.out.printf("%s -> %s : %d\n", block.toString(), nextMaterial.toString(), newStrength);
         synchronized (VerifyDecayDB.syncDB) {
             try {
-                if (newStrength == 0) DBPlayerBlock.remove(x, y, z);
+                if (newStrength == 0) PlayerBlockMonitor.remove(x, y, z, worldUUID,block,uuid);
                 else DBPlayerBlock.update(x, y, z, -(myStrength - newStrength), nextMaterial);
-                Bukkit.getWorld(worldUUID).getBlockAt(x, y, z).setType(nextMaterial);
+                final World world = Bukkit.getWorld(worldUUID);
+                if (world != null)
+                    world.getBlockAt(x, y, z).setType(nextMaterial);
             } catch (SQLException throwables) {
                 //TODO
                 throwables.printStackTrace();

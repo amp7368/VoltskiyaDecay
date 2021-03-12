@@ -8,6 +8,8 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 
@@ -20,8 +22,8 @@ public class RegenPlayerInterventionListener implements Listener {
     }
 
     @EventHandler(ignoreCancelled = true)
-    public void onBlockDestory(BlockDestroyEvent event) {
-        System.out.println("destory");
+    public void onBlockDestroy(BlockDestroyEvent event) {
+        System.out.println("destroy");
         final Block block = event.getBlock();
         int x = block.getX();
         int y = block.getY();
@@ -32,6 +34,12 @@ public class RegenPlayerInterventionListener implements Listener {
         } catch (SQLException throwables) {
             throwables.printStackTrace();
         }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onBlockDamage(BlockBreakEvent event) {
+        System.out.println("break");
+        removeBlock(event.getBlock());
     }
 
     @EventHandler(ignoreCancelled = true)

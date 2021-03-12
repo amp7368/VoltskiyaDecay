@@ -2,7 +2,6 @@ package apple.voltskiya.plugin.ore_regen.brush;
 
 import apple.voltskiya.plugin.VoltskiyaPlugin;
 import apple.voltskiya.plugin.ore_regen.gui.RegenConfigInstance;
-import apple.voltskiya.plugin.ore_regen.regen.RegenSectionManager;
 import apple.voltskiya.plugin.ore_regen.sql.DBRegen;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -22,11 +21,15 @@ public class ActiveBrush {
     public static final int BLOCKS_TO_UPDATE_AT_ONCE_INTERVAL = 5;
 
     public static final Object WAIT_TO_UPDATE_OBJECT = new Object();
+    private static final long WAIT_TO_UPDATE_CHECK = 10000;
+    public static final Object WAIT_TO_SUB_UPDATE_OBJECT = new Object();
+    private static final long WAIT_TO_SUB_UPDATE_CHECK = 10000;
 
     private static final int BRUSH_USAGE_COUNT = 100000;
     private static final int BRUSH_USAGE_INTERVAL = 10;
 
-    public static boolean isBusy = false;
+    private static boolean isBusy = false;
+    private static boolean isSubBusy = false;
 
     private final RegenConfigInstance.BrushType brushType;
     private final int radius;
@@ -43,6 +46,23 @@ public class ActiveBrush {
         this.uid = uid;
         this.markerBlock = markerBlock;
         this.hostBlocks = new HashSet<>(hostBlocks.keySet());
+    }
+
+    public synchronized void destoryBlocks() {
+        List<Coords> coords;
+        try {
+            coords = DBRegen.destroyBlocks(uid);
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+            return;
+        }
+        Bukkit.getScheduler().scheduleSyncDelayedTask(VoltskiyaPlugin.get(), () -> {
+            for (Coords coord : coords) {
+                World world = Bukkit.getWorld(coord.worldUID);
+                if (world != null)
+                    world.getBlockAt(coord.x, coord.y, coord.z).setType(Material.AIR);
+            }
+        }, 0);
     }
 
     public synchronized static void prune() {
@@ -141,7 +161,7 @@ public class ActiveBrush {
         synchronized (WAIT_TO_UPDATE_OBJECT) {
             while (isBusy) {
                 try {
-                    WAIT_TO_UPDATE_OBJECT.wait();
+                    WAIT_TO_UPDATE_OBJECT.wait(WAIT_TO_UPDATE_CHECK);
                 } catch (InterruptedException ignored) {
                 }
             }
@@ -149,7 +169,7 @@ public class ActiveBrush {
         }
         List<Coords> coordsToUnmark;
         try {
-            coordsToUnmark = DBRegen.getMarking(uid, marking);
+            coordsToUnmark = DBRegen.getAndUpdateMarking(uid, marking);
         } catch (SQLException throwables) {
             throwables.printStackTrace();
             return;
@@ -177,11 +197,23 @@ public class ActiveBrush {
             }
             return;
         }
-
+        synchronized (WAIT_TO_SUB_UPDATE_OBJECT) {
+            while (isSubBusy) {
+                try {
+                    WAIT_TO_SUB_UPDATE_OBJECT.wait(WAIT_TO_SUB_UPDATE_CHECK);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            isSubBusy = true;
+        }
         // make this happen on the main thread
         Bukkit.getScheduler().scheduleSyncDelayedTask(VoltskiyaPlugin.get(), () -> {
             if (!dividedCoordsTomark.isEmpty())
-                for (Coords coords : dividedCoordsTomark.remove(0)) coords.mark(marking);
+                for (Coords coords : dividedCoordsTomark.remove(0)) {
+                    coords.mark(marking);
+                }
+            new SubIsBusySetFalse().start();
         }, 0);
 
         // we're not on the main thread
@@ -197,6 +229,7 @@ public class ActiveBrush {
         return radius;
     }
 
+
     private static class PruneHeartbeat extends Thread {
         @Override
         public void run() {
@@ -208,6 +241,16 @@ public class ActiveBrush {
                 }
                 System.out.println("prune");
                 ActiveBrush.prune();
+            }
+        }
+    }
+
+    private static class SubIsBusySetFalse extends Thread {
+        @Override
+        public void run() {
+            synchronized (WAIT_TO_SUB_UPDATE_OBJECT) {
+                isSubBusy = false;
+                WAIT_TO_SUB_UPDATE_OBJECT.notify();
             }
         }
     }

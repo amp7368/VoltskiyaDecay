@@ -25,6 +25,8 @@ public class DBNames {
         public static final String IS_MARKED = "is_marked";
         public static final String VEIN_INDEX = "vein_index";
         public static final String IS_ORE = "is_ore";
+
+        public static final String MINE = "mine";
     }
 
     public static class PlayerBlock {

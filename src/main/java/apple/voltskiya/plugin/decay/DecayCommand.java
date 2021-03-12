@@ -2,12 +2,12 @@ package apple.voltskiya.plugin.decay;
 
 import apple.voltskiya.plugin.Permissions;
 import apple.voltskiya.plugin.decay.destroy.DecayHeartbeat;
+import apple.voltskiya.plugin.ore_regen.PluginOreRegen;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.CommandPermission;
 import co.aikar.commands.annotation.Subcommand;
-
-import static apple.voltskiya.plugin.decay.PluginDecay.DECAY_INTENSITY;
+import org.bukkit.entity.Player;
 
 @CommandAlias("decay")
 @CommandPermission(Permissions.DECAY)
@@ -28,9 +28,27 @@ public class DecayCommand extends BaseCommand {
     @Subcommand("intensity")
     public class Intensity extends BaseCommand {
         @Subcommand("set")
-        public void setIntensity(float val) {
-            System.out.println(val);
-            DECAY_INTENSITY = val;
+        public void setIntensity(Player player, float val) {
+            player.sendMessage(String.valueOf(PluginOreRegen.DECAY_INTENSITY = val));
+        }
+
+        @Subcommand("get")
+        public void getIntensity(Player player) {
+            player.sendMessage(String.valueOf(PluginOreRegen.DECAY_INTENSITY));
         }
     }
+
+    @Subcommand("interval")
+    public class Interval extends BaseCommand {
+        @Subcommand("set")
+        public void setInterval(Player player, long val) {
+            player.sendMessage(String.valueOf(PluginOreRegen.DECAY_INTERVAL = val));
+        }
+
+        @Subcommand("get")
+        public void getInterval(Player player) {
+            player.sendMessage(String.valueOf(PluginOreRegen.DECAY_INTERVAL));
+        }
+    }
+
 }

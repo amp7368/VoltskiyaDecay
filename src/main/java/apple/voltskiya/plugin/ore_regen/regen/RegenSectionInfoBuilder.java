@@ -1,13 +1,12 @@
 package apple.voltskiya.plugin.ore_regen.regen;
 
-import apple.voltskiya.plugin.utils.Pair;
 import org.bukkit.Material;
 
 import java.util.*;
 
 public class RegenSectionInfoBuilder {
     private final Map<Material, Integer> actualBlockCount = new HashMap<>();
-    private final Set<Material> hostBlocks = new HashSet<>();
+    private final Map<Material, Integer> hostBlocks = new HashMap<>();
     private final Map<Material, List<Integer>> veinSizes = new HashMap<>();
     private final Map<Material, Integer> desiredBlockDistribution = new HashMap<>();
     private final long uid;
@@ -40,15 +39,23 @@ public class RegenSectionInfoBuilder {
         }
         for (Material material : veinSizesProbability.keySet())
             actualBlockCount.putIfAbsent(material, 0);
-        return new RegenSectionInfo(actualBlockCount, totalActualBlocks, hostBlocks, veinSizesProbability, desiredBlockDistributionPerc, uid);
+
+        Map<Material, Double> hostBlockDistribution = new HashMap<>();
+        totalDistributionSum = 0;
+        for (Integer i : hostBlocks.values()) totalDistributionSum += i;
+        for (Map.Entry<Material, Integer> entry : hostBlocks.entrySet()) {
+            hostBlockDistribution.put(entry.getKey(), ((double) entry.getValue()) / totalDistributionSum);
+        }
+
+        return new RegenSectionInfo(actualBlockCount, totalActualBlocks, hostBlockDistribution, veinSizesProbability, desiredBlockDistributionPerc, uid);
     }
 
     public void addActualBlockCount(String blockName, int blockCount) {
         actualBlockCount.put(Material.valueOf(blockName), blockCount);
     }
 
-    public void addHostBlock(String blockName) {
-        hostBlocks.add(Material.valueOf(blockName));
+    public void addHostBlock(String blockName, int blockCount) {
+        hostBlocks.put(Material.valueOf(blockName), blockCount);
     }
 
     public void addVeinSizes(String blockName, int desiredCount) {

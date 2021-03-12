@@ -9,7 +9,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static apple.voltskiya.plugin.decay.PluginDecay.DECAY_INTERVAL;
+import static apple.voltskiya.plugin.ore_regen.PluginOreRegen.DECAY_INTERVAL;
 
 public class DecayHeartbeat {
     private static List<DataPlayerBlock> decayActions = new ArrayList<>();
