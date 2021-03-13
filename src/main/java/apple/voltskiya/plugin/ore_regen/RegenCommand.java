@@ -15,8 +15,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.Nullable;
 
-import static apple.voltskiya.plugin.decay.PluginDecay.REGEN_INTENITY;
-import static apple.voltskiya.plugin.decay.PluginDecay.REGEN_INTERVAL;
+import static apple.voltskiya.plugin.ore_regen.PluginOreRegen.*;
 
 
 @CommandAlias("regen")
@@ -27,7 +26,7 @@ public class RegenCommand extends BaseCommand {
     }
 
     @Subcommand("heartbeat")
-    public class Heartbeat extends BaseCommand {
+    public class HeartbeatCommand extends BaseCommand {
         @Subcommand("start")
         public void heartbeatStart() {
             RegenHeartbeat.startBeating();
@@ -39,16 +38,61 @@ public class RegenCommand extends BaseCommand {
         }
     }
 
-    @Subcommand("intensity")
-    public class Intensity extends BaseCommand {
-        @Subcommand("set")
-        public void setIntensity(Player player, double val) {
-            player.sendMessage(String.valueOf(REGEN_INTENITY = val));
+    @Subcommand("ore")
+    public class OreCommand extends BaseCommand {
+        @Subcommand("multiplier")
+        public class MultiplierCommand extends BaseCommand {
+            @Subcommand("set")
+            public void setIntensity(Player player, double val) {
+                player.sendMessage(String.valueOf(ORE_REGEN_MULTIPLIER = val));
+            }
+
+            @Subcommand("get")
+            public void getIntensity(Player player) {
+                player.sendMessage(String.valueOf(ORE_REGEN_MULTIPLIER));
+            }
         }
 
-        @Subcommand("get")
-        public void getIntensity(Player player) {
-            player.sendMessage(String.valueOf(REGEN_INTENITY));
+        @Subcommand("intensity")
+        public class IntensityCommand extends BaseCommand {
+            @Subcommand("set")
+            public void setIntensity(Player player, double val) {
+                player.sendMessage(String.valueOf(ORE_REGEN_INTENSITY = val));
+            }
+
+            @Subcommand("get")
+            public void getIntensity(Player player) {
+                player.sendMessage(String.valueOf(ORE_REGEN_INTENSITY));
+            }
+        }
+    }
+
+    @Subcommand("air")
+    public class AirCommand extends BaseCommand {
+        @Subcommand("multiplier")
+        public class MultiplierCommand extends BaseCommand {
+            @Subcommand("set")
+            public void setIntensity(Player player, double val) {
+                player.sendMessage(String.valueOf(AIR_REGEN_MULTIPLIER = val));
+            }
+
+            @Subcommand("get")
+            public void getIntensity(Player player) {
+                player.sendMessage(String.valueOf(AIR_REGEN_MULTIPLIER));
+            }
+        }
+
+        @Subcommand("intensity")
+        public class IntensityCommand extends BaseCommand {
+            @Subcommand("set")
+            public void setIntensity(Player player, double val) {
+                player.sendMessage(String.valueOf(AIR_REGEN_INTENSITY = val));
+            }
+
+            @Subcommand("get")
+            public void getIntensity(Player player) {
+                player.sendMessage(String.valueOf(AIR_REGEN_INTENSITY));
+            }
         }
     }
 
@@ -63,10 +107,43 @@ public class RegenCommand extends BaseCommand {
         public void getInterval(Player player) {
             player.sendMessage(String.valueOf(REGEN_INTERVAL));
         }
+    }@Subcommand("maxcount")
+    public class MaxCount extends BaseCommand {
+        @Subcommand("set")
+        public void setInterval(Player player, int val) {
+            player.sendMessage(String.valueOf(REGEN_MAX_COUNT = val));
+        }
+
+        @Subcommand("get")
+        public void getInterval(Player player) {
+            player.sendMessage(String.valueOf(REGEN_MAX_COUNT));
+        }
     }
 
     @Subcommand("brush")
     public class RegenBrushCommand extends BaseCommand {
+        @Subcommand("destory")
+        public void destory(Player player){
+            ItemMeta meta = player.getInventory().getItemInMainHand().getItemMeta();
+            if (meta == null) {
+                player.sendMessage("There is nothing in your hand");
+                return;
+            }
+            @Nullable Long powertoolUid = meta.getPersistentDataContainer().get(RegenConfigInstance.POWERTOOL_UID_KEY, PersistentDataType.LONG);
+            if (powertoolUid == null) {
+                player.sendMessage("You're not holding a valid powertool");
+                return;
+            }
+            ActiveBrush brush = ActiveBrush.getBrush(powertoolUid);
+            if (brush == null) {
+                player.sendMessage("You're not holding a valid powertool");
+                return;
+            }
+            new Thread(()->{
+                brush.destoryBlocks();
+                player.sendMessage("I've destroyed it D:");
+            }).start();
+        }
         @Subcommand("create")
         public void createRegenInv(Player player) {
             player.openInventory(new InventoryRegenBox().getInventory());
@@ -99,12 +176,10 @@ public class RegenCommand extends BaseCommand {
                 return;
             }
             new Thread(() ->
-                    brush.markAll(marking, () -> {
-                                player.sendMessage(
-                                        marking ? "I've marked all your painted locations" :
-                                                "I've painted and fully unmarked your marked locations"
-                                );
-                            }
+                    brush.markAll(marking, () -> player.sendMessage(
+                            marking ? "I've marked all your painted locations" :
+                                    "I've painted and fully unmarked your marked locations"
+                    )
                     )
             ).start();
         }

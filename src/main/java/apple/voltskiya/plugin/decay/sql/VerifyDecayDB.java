@@ -24,7 +24,7 @@ public class VerifyDecayDB {
                     "    %s INTEGER     NOT NULL,\n" +
                     "    %s INTEGER     NOT NULL,\n" +
                     "    %s NCHAR(36) NOT NULL,\n" +
-                    "    %s NCHAR(36) NOT NULL,\n" +
+                    "    %s INTEGER     NOT NULL,\n" +
                     "    PRIMARY KEY (%s,%s,%s)\n",
             DBNames.PlayerBlock.X,
             DBNames.PlayerBlock.Y,
@@ -68,6 +68,7 @@ public class VerifyDecayDB {
     private static void verifyTables() throws SQLException {
         synchronized (syncDB) {
             Statement statement = database.createStatement();
+            statement.execute("PRAGMA auto_vacuum = 1; -- full autovacuum");
             statement.execute(String.format(CREATE_TABLE_FORMAT, DBNames.PlayerBlock.PLAYER_BLOCK, PLAYER_BLOCK_CONTENT));
             statement.close();
         }

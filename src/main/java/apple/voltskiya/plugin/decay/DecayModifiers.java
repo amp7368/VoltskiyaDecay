@@ -1,8 +1,8 @@
 package apple.voltskiya.plugin.decay;
 
 
+import apple.voltskiya.plugin.ore_regen.PluginOreRegen;
 import org.bukkit.Material;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.jetbrains.annotations.Nullable;
 
@@ -56,6 +56,6 @@ public class DecayModifiers {
 
     public static int getResistance(Material material) {
         if (material.isAir()) return 0;
-        return resistance.getOrDefault(material, PluginDecay.DEFAULT_RESISTANCE);
+        return resistance.getOrDefault(material, PluginOreRegen.DEFAULT_RESISTANCE);
     }
 }

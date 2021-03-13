@@ -2,13 +2,12 @@ package apple.voltskiya.plugin.ore_regen.brush;
 
 
 import apple.voltskiya.plugin.VoltskiyaPlugin;
-import apple.voltskiya.plugin.ore_regen.regen.RegenSectionInfo;
-import apple.voltskiya.plugin.ore_regen.regen.RegenSectionManager;
 import apple.voltskiya.plugin.ore_regen.sql.DBRegen;
 import org.bukkit.Bukkit;
 
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static apple.voltskiya.plugin.ore_regen.PluginOreRegen.BRUSH_EXECUTE_INTERVAL;
 
@@ -20,6 +19,7 @@ public class BrushExecution {
     private static final Object TOOL_TO_IMPACT_SYNC_OBJECT = new Object();
 
     private static final Object WRITING_BUSY_SYNC_OBJECT = new Object();
+    private static final long WRITING_BUSY_SYNC_TIMEOUT = 10000;
     private static boolean isBusy = false;
 
     public static void addTodo(long uid, List<Coords> coords) {
@@ -30,18 +30,19 @@ public class BrushExecution {
     }
 
     public static void completeTodo() {
-
         synchronized (WRITING_BUSY_SYNC_OBJECT) {
             while (isBusy) {
                 try {
-                    WRITING_BUSY_SYNC_OBJECT.wait();
+                    WRITING_BUSY_SYNC_OBJECT.wait(WRITING_BUSY_SYNC_TIMEOUT);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
+
             double[] tps = Bukkit.getTPS();
             if (tps[0] < tps[2] - DROP_IN_TPS || toolToImpact.isEmpty()) {
                 isBusy = false;
+                WRITING_BUSY_SYNC_OBJECT.notify();
                 return;
             }
             isBusy = true;
@@ -70,11 +71,22 @@ public class BrushExecution {
                     }
                 }
             }
-
+            if (todo.isEmpty()) {
+                synchronized (WRITING_BUSY_SYNC_OBJECT) {
+                    isBusy = false;
+                    WRITING_BUSY_SYNC_OBJECT.notify();
+                    return;
+                }
+            }
             // schedule this so I get back on the main thread
             Bukkit.getScheduler().scheduleSyncDelayedTask(VoltskiyaPlugin.get(), () -> markBlocks(todo, true), 0);
         }
         try {
+            for (Map.Entry<Long, List<Coords>> tool : todo.entrySet()) {
+                for (Coords coords : tool.getValue()) {
+                    coords.updateBlockAndWorld();
+                }
+            }
             DBRegen.setMarked(todo, true);
         } catch (SQLException throwables) {
             throwables.printStackTrace();
@@ -89,28 +101,28 @@ public class BrushExecution {
         }
 
         // new thread because I don't want the main thread to be waiting on the database to finish writing
-        synchronized (WRITING_BUSY_SYNC_OBJECT) {
-            isBusy = false;
-            WRITING_BUSY_SYNC_OBJECT.notify();
-        }
+        new Thread(() -> {
+            synchronized (WRITING_BUSY_SYNC_OBJECT) {
+                isBusy = false;
+                WRITING_BUSY_SYNC_OBJECT.notify();
+            }
+        }).start();
 
     }
 
     public static void heartbeat() {
         new BrushExecutionHeartbeat().start();
+        Bukkit.getScheduler().scheduleSyncDelayedTask(VoltskiyaPlugin.get(), BrushExecution::heartbeat, BRUSH_EXECUTE_INTERVAL);
     }
 
-    private static class BrushExecutionHeartbeat extends Thread{
+
+    private static class BrushExecutionHeartbeat extends Thread {
         @Override
         public void run() {
-            while (true) {
-                try {
-                    Thread.sleep(BRUSH_EXECUTE_INTERVAL);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                BrushExecution.completeTodo();
+            synchronized (WRITING_BUSY_SYNC_OBJECT) {
+                if (isBusy) return;
             }
+            BrushExecution.completeTodo();
         }
     }
 }

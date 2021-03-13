@@ -4,18 +4,11 @@ import apple.voltskiya.plugin.VoltskiyaModule;
 import apple.voltskiya.plugin.VoltskiyaPlugin;
 import apple.voltskiya.plugin.decay.destroy.DecayHeartbeat;
 import apple.voltskiya.plugin.decay.record.DecayBlockPlaceListener;
+import apple.voltskiya.plugin.decay.sql.PlayerBlockMonitor;
 import apple.voltskiya.plugin.decay.sql.VerifyDecayDB;
 
 
 public class PluginDecay extends VoltskiyaModule {
-    public static final long DECAY_INTERVAL = 20;
-    public static final float DECAY_PERCENTAGE = .01f;
-    public static final int DEFAULT_RESISTANCE = 10;
-    public static final int SUPPORT_RADIUS = 7;
-    public static float DECAY_INTENSITY = .002f;
-
-    public static long REGEN_INTERVAL = 200;
-    public static double REGEN_INTENITY = 10;
 
     private static PluginDecay instance;
 
@@ -26,10 +19,11 @@ public class PluginDecay extends VoltskiyaModule {
     @Override
     public void enable() {
         instance = this;
-        VerifyDecayDB.initialize();
-        new DecayBlockPlaceListener();
-        DecayHeartbeat.startBeating();
-        VoltskiyaPlugin.get().getCommandManager().registerCommand(new DecayCommand());
+//        VerifyDecayDB.initialize();
+//        new DecayBlockPlaceListener();
+//        DecayHeartbeat.startBeating();
+//        PlayerBlockMonitor.tick();
+//        VoltskiyaPlugin.get().getCommandManager().registerCommand(new DecayCommand());
     }
 
     @Override

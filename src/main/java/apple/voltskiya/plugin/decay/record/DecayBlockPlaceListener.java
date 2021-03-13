@@ -3,6 +3,7 @@ package apple.voltskiya.plugin.decay.record;
 import apple.voltskiya.plugin.VoltskiyaPlugin;
 import apple.voltskiya.plugin.decay.PluginDecay;
 import apple.voltskiya.plugin.decay.sql.DBPlayerBlock;
+import apple.voltskiya.plugin.decay.sql.PlayerBlockMonitor;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -19,19 +20,11 @@ public class DecayBlockPlaceListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
-        try {
-            DBPlayerBlock.playerPlace(event);
-        } catch (SQLException throwables) {
-            PluginDecay.get().log(Level.INFO, "SQL exception placing a block. Probably because the DB has a block that doesn't exist in game\"" + throwables.getMessage() + "\"");
-        }
+        PlayerBlockMonitor.playerPlace(event);
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onBlockGone(BlockBreakEvent event) {
-        try {
-            DBPlayerBlock.remove(event);
-        } catch (SQLException throwables) {
-            PluginDecay.get().log(Level.INFO, "SQL exception placing a block. Probably because the DB has a block that doesn't exist in game\"" + throwables.getMessage() + "\"");
-        }
+        PlayerBlockMonitor.remove(event);
     }
 }

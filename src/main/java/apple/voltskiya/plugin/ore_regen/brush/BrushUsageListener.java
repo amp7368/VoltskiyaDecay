@@ -25,17 +25,19 @@ public class BrushUsageListener implements Listener {
         if (meta == null) return; // this is possible
         Long uid = meta.getPersistentDataContainer().get(RegenConfigInstance.POWERTOOL_UID_KEY, PersistentDataType.LONG);
         if (uid != null) {
-            ActiveBrush brush = ActiveBrush.getBrush(uid);
-            if (brush == null) {
-                return;
-            }
-            RayTraceResult rayTraceResult = event.getPlayer().rayTraceBlocks(150, FluidCollisionMode.NEVER);
-            if (rayTraceResult != null && rayTraceResult.getHitBlock() != null) {
-                event.getPlayer().sendActionBar(
-                        Component.text("Using brush - Radius: " + brush.getRadius())
-                );
-                brush.use(rayTraceResult.getHitBlock(), event.getAction());
-            }
+            new Thread(() -> {
+                ActiveBrush brush = ActiveBrush.getBrush(uid);
+                if (brush == null) {
+                    return;
+                }
+                RayTraceResult rayTraceResult = event.getPlayer().rayTraceBlocks(150, FluidCollisionMode.NEVER);
+                if (rayTraceResult != null && rayTraceResult.getHitBlock() != null) {
+                    event.getPlayer().sendActionBar(
+                            Component.text("Using brush - Radius: " + brush.getRadius())
+                    );
+                    brush.use(rayTraceResult.getHitBlock(), event.getAction());
+                }
+            }).start();
         }
     }
 }
