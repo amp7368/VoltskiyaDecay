@@ -12,12 +12,13 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.logging.Level;
 
+import static apple.voltskiya.plugin.DBNames.*;
 import static apple.voltskiya.plugin.DBNames.Regen.*;
 
 public class VerifyRegenDB {
     private static final String CREATE_TABLE_FORMAT = "CREATE TABLE IF NOT EXISTS %s ( %s );";
     private static final String TOOL_UID_CONTENT = String.format(
-            "%s BIGINT PRIMARY KEY NOT NULL,\n" +
+            "%s INTEGER PRIMARY KEY NOT NULL,\n" +
                     "%s VARCHAR(20)        NOT NULL,\n" +
                     "%s INTEGER            NOT NULL",
             TOOL_UID,
@@ -25,7 +26,7 @@ public class VerifyRegenDB {
             BRUSH_RADIUS
     );
     private static final String TOOL_TO_BLOCK_CONTENT = String.format(
-            "%s    BIGINT      NOT NULL,\n" +
+            "%s    INTEGER      NOT NULL,\n" +
                     "    %s  VARCHAR(50) NOT NULL,\n" +
                     "    %s  INTEGER     NOT NULL,\n" +
                     "    PRIMARY KEY (%s, %s)," +
@@ -39,7 +40,7 @@ public class VerifyRegenDB {
             TOOL_UID_TABLE
     );
     private static final String TOOL_TO_VEIN_CONTENT = String.format(
-            "%s    BIGINT      NOT NULL,\n" +
+            "%s    INTEGER      NOT NULL,\n" +
                     "    %s  VARCHAR(50) NOT NULL,\n" +
                     "    %s  INTEGER     NOT NULL,\n" +
                     "    %s  INTEGER     NOT NULL,\n" +
@@ -56,13 +57,13 @@ public class VerifyRegenDB {
             TOOL_UID_TABLE
     );
     private static final String SECTION_TO_BLOCK_CONTENT = String.format(
-            "%s   BIGINT      NOT NULL,\n" +
+            "%s   INTEGER      NOT NULL,\n" +
                     "    %s          INTEGER     NOT NULL,\n" +
-                    "    %s          INTEGER     NOT NULL,\n" +
-                    "    %s          INTEGER     NOT NULL,\n" +
-                    "    %s          NCHAR(36)   NOT NULL,\n" +
+                    "    %s          SMALLINT    NOT NULL,\n" +
+                    "    %s          SMALLINT    NOT NULL,\n" +
+                    "    %s          TINYINT     NOT NULL,\n" +
                     "    %s          BOOLEAN     NOT NULL,\n" +
-                    "    %s          VARCHAR(50) NOT NULL,\n" +
+                    "    %s          SMALLINT    NOT NULL,\n" +
                     "    %s          BOOLEAN     NOT NULL,\n" +
                     "    PRIMARY KEY (%s, %s, %s, %s, %s)," +
                     "    UNIQUE      (%s, %s, %s, %s)," +
@@ -90,6 +91,12 @@ public class VerifyRegenDB {
             TOOL_UID,
             TOOL_UID_TABLE
     );
+    private static final String WORLD_UID_TO_MY_UID_CONTENT = String.format(
+            "   %s NCHAR(36) NOT NULL UNIQUE PRIMARY KEY,\n" +
+                    "    %s   INTEGER   NOT NULL UNIQUE", REAL_WORLD_UID, MY_WORLD_UID);
+    private static final String BLOCK_TO_MY_UID = String.format(
+            "   %s NCHAR(50) NOT NULL UNIQUE PRIMARY KEY,\n" +
+                    "    %s   INTEGER   NOT NULL UNIQUE", REAL_WORLD_UID, MY_WORLD_UID);
     protected static Connection database;
 
     // set up the database file
@@ -127,6 +134,7 @@ public class VerifyRegenDB {
             statement.execute(String.format(CREATE_TABLE_FORMAT, TOOL_TO_DENSITY_TABLE, TOOL_TO_BLOCK_CONTENT));
             statement.execute(String.format(CREATE_TABLE_FORMAT, SECTION_INFO_TABLE, TOOL_TO_BLOCK_CONTENT));
             statement.execute(String.format(CREATE_TABLE_FORMAT, SECTION_TO_BLOCK_TABLE, SECTION_TO_BLOCK_CONTENT));
+            statement.execute(String.format(CREATE_TABLE_FORMAT, WORLD_UID_TO_MY_UID_TABLE, WORLD_UID_TO_MY_UID_CONTENT));
             statement.close();
         }
     }

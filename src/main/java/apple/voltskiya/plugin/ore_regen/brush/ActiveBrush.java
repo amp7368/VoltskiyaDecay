@@ -132,8 +132,13 @@ public class ActiveBrush {
                         z = currentZ;
                     }
                     Material materialThere = world.getBlockAt(x, y, z).getType();
-                    if (this.hostBlocks.contains(materialThere))
-                        coords.add(new Coords(x, y, z, worldUid, markerBlock, materialThere));
+                    if (this.hostBlocks.contains(materialThere)) {
+                        try {
+                            coords.add(new Coords(x, y, z, worldUid, markerBlock, materialThere));
+                        } catch (SQLException throwables) {
+                            throwables.printStackTrace();
+                        }
+                    }
                     if (++count == BRUSH_USAGE_COUNT) {
                         currentX = x;
                         currentY = y;

@@ -36,7 +36,7 @@ public class RegenHeartbeat {
         @Override
         public void run() {
             System.out.println("beat");
-//            RegenSectionManager.randomOre();
+            RegenSectionManager.randomOre();
             RegenSectionManager.randomAir();
             isBusy.set(false);
         }

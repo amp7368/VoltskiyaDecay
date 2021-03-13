@@ -2,6 +2,7 @@ package apple.voltskiya.plugin.ore_regen.regen;
 
 import apple.voltskiya.plugin.VoltskiyaPlugin;
 import apple.voltskiya.plugin.ore_regen.sql.DBRegen;
+import apple.voltskiya.plugin.ore_regen.sql.DBUtils;
 import apple.voltskiya.plugin.utils.Pair;
 import apple.voltskiya.plugin.utils.Triple;
 import org.bukkit.Bukkit;
@@ -250,6 +251,7 @@ public class RegenSectionInfo {
         private UUID worldUid = null;
         private boolean complete = false;
         private final List<Triple<Integer, Integer, Integer>> populateMe = new ArrayList<>();
+        private int myWorldUid = -1;
 
         public OreVein(Material blockType) {
             this.blockType = blockType;
@@ -257,6 +259,15 @@ public class RegenSectionInfo {
                 VeinProbability probability = veinSizesProbability.get(blockType);
                 veinSize = probability.choose();
             } else veinSize = 1;
+        }
+
+        public void setCoords(int x, int y, int z, int worldUid, Material oldBlockType) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+            this.myWorldUid = worldUid;
+            this.oldBlockType = oldBlockType;
+            complete = true;
         }
 
         public void setCoords(int x, int y, int z, UUID worldUid, Material oldBlockType) {
@@ -322,6 +333,14 @@ public class RegenSectionInfo {
                 }
             }
             return new ArrayList<>(xyz);
+        }
+
+        public void updateWorldUID() throws SQLException {
+            if (this.complete)
+                if (this.worldUid == null)
+                    this.worldUid = DBUtils.getRealWorldUid(myWorldUid);
+                else
+                    this.myWorldUid = DBUtils.getMyWorldUid(worldUid.toString());
         }
     }
 }

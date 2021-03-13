@@ -56,7 +56,7 @@ public class DBRegen {
     private static final String GET_SINGLE_TOOL_INFO = String.format("SELECT * FROM %s WHERE %s = %%d", TOOL_UID_TABLE, TOOL_UID);
     private static final String GET_SINGLE_HOST_BLOCKS = String.format("SELECT * FROM %s WHERE %s = %%d", TOOL_TO_HOST_BLOCK_TABLE, TOOL_UID);
     private static final String INSERT_SECTION_TO_BLOCK = String.format("INSERT INTO %s (%s,%s,%s,%s,%s,%s,%s,%s) VALUES " +
-                    " ( %%d, %%d, %%d, %%d, '%%s', %%b, %%b, '%%s') ON CONFLICT(%s,%s,%s,%s) DO UPDATE SET %s = %%d, %s = %%b", SECTION_TO_BLOCK_TABLE,
+                    " ( %%d, %%d, %%d, %%d, %%d, %%b, %%b, '%%s') ON CONFLICT(%s,%s,%s,%s) DO UPDATE SET %s = %%d, %s = %%b", SECTION_TO_BLOCK_TABLE,
             TOOL_UID, X, Y, Z, WORLD_UUID, IS_MARKED, IS_ORE, BLOCK_NAME, X, Y, Z, WORLD_UUID, TOOL_UID, IS_MARKED);
     private static final String GET_MARKED_BLOCKS_OF_TOOL = String.format("SELECT * FROM %s WHERE %s = %%d AND %s = %%b", SECTION_TO_BLOCK_TABLE, TOOL_UID, IS_MARKED);
     public static final String UPDATE_IS_MARKED = String.format("UPDATE %s SET %s = %%b where %s = %%d", SECTION_TO_BLOCK_TABLE, IS_MARKED, TOOL_UID);
@@ -74,15 +74,15 @@ public class DBRegen {
         for (int x = -1; x <= 1; x++) {
             for (int y = -1; y <= 1; y++) {
                 for (int z = -1; z <= 1; z++) {
-                    if (!isFirst) allAdjacent.append(" INNER JOIN ");
+                    if (!isFirst) allAdjacent.append(" UNION ");
                     else isFirst = false;
                     allAdjacent.append(
                             String.format(
-                                    " ( SELECT * FROM %s " +
+                                    " SELECT * FROM %s " +
                                             "WHERE %s = %s.%s + %d " +
                                             "AND %s = %s.%s + %d " +
                                             "AND %s = %s.%s + %d " +
-                                            "AND %s = %s.%s ) ",
+                                            "AND %s = %s.%s ",
                                     SECTION_TO_BLOCK_TABLE,
                                     X, MINE, X, x,
                                     Y, MINE, Y, y,
@@ -93,7 +93,7 @@ public class DBRegen {
                 }
             }
         }
-        ALL_ADJACENT = allAdjacent.toString();
+        ALL_ADJACENT = String.format("( %s ) ",allAdjacent.toString());
     }
 
     public static long saveConfig(RegenConfigInstance config) throws SQLException {
@@ -191,12 +191,16 @@ public class DBRegen {
                 int x = response.getInt(X);
                 int y = response.getInt(Y);
                 int z = response.getInt(Z);
-                UUID worldUid = UUID.fromString(response.getString(WORLD_UUID));
+                int myWorldUid = response.getInt(WORLD_UUID);
                 Material blockType = Material.valueOf(response.getString(BLOCK_NAME));
-                oreChoices[i++].setCoords(x, y, z, worldUid, blockType);
+                oreChoices[i++].setCoords(x, y, z, myWorldUid, blockType);
+            }
+            for (RegenSectionInfo.OreVein oreChoice : oreChoices) {
+                oreChoice.updateWorldUID();
             }
             runAfter = updateSectionInfoDB(uid);
         }
+
         runAfter.run();
     }
 
@@ -241,9 +245,12 @@ public class DBRegen {
                         response.getInt(X),
                         response.getInt(Y),
                         response.getInt(Z),
-                        UUID.fromString(response.getString(WORLD_UUID)),
+                        response.getInt(WORLD_UUID),
                         Material.AIR
                 );
+            }
+            for (RegenSectionInfo.OreVein oreChoice : oreChoices) {
+                oreChoice.updateWorldUID();
             }
         }
     }
@@ -263,7 +270,7 @@ public class DBRegen {
                             coords.x,
                             coords.y,
                             coords.z,
-                            coords.worldUID.toString(),
+                            coords.myWorldUID,
                             marking,
                             false, // not ore
                             coords.lastBlock.name(),
@@ -340,6 +347,7 @@ public class DBRegen {
 
     public static void setOre(long uid, int x, int y, int z, UUID worldUID, Material blockType, Material oldBlockType) throws SQLException {
         synchronized (VerifyDecayDB.syncDB) {
+            int myWorldUid = DBUtils.getMyWorldUid(worldUID.toString());
             Statement statement = VerifyRegenDB.database.createStatement();
             statement.execute(String.format(
                     String.format(
@@ -360,7 +368,7 @@ public class DBRegen {
             statement.execute(String.format(
                     String.format("UPDATE %s\n" +
                                     "SET %s = false, %s = '%%s', %s = true\n" +
-                                    "WHERE %s = %%d AND %s = %%d AND %s = %%d AND %s = '%%s' AND %s = '%%s'",
+                                    "WHERE %s = %%d AND %s = %%d AND %s = %%d AND %s = '%%s' AND %s = %%d",
                             SECTION_TO_BLOCK_TABLE,
                             IS_MARKED,
                             BLOCK_NAME,
@@ -376,20 +384,21 @@ public class DBRegen {
                     x,
                     y,
                     z,
-                    worldUID
+                    myWorldUid
             ));
         }
     }
 
     public static void setBlock(UUID world, int x, int y, int z, Material oldBlock, Material newBlock) throws SQLException {
         synchronized (VerifyDecayDB.syncDB) {
+            int myWorldUid = DBUtils.getMyWorldUid(world.toString());
             Statement statement = VerifyRegenDB.database.createStatement();
             ResultSet response = statement.executeQuery(
                     String.format(
                             String.format("SELECT %s FROM %s " +
-                                            "WHERE %s = %%d AND %s = %%d AND %s = %%d AND %s = '%%s'",
+                                            "WHERE %s = %%d AND %s = %%d AND %s = %%d AND %s = %%d",
                                     TOOL_UID, SECTION_TO_BLOCK_TABLE, X, Y, Z, WORLD_UUID
-                            ), x, y, z, world.toString()
+                            ), x, y, z, myWorldUid
                     )
             );
             if (!response.isClosed()) {
@@ -397,7 +406,7 @@ public class DBRegen {
                 statement.execute(String.format(
                         String.format("UPDATE %s\n" +
                                         "SET %s = false, %s = '%%s'\n" +
-                                        "WHERE %s = %%d AND %s = %%d AND %s = %%d AND %s = '%%s'",
+                                        "WHERE %s = %%d AND %s = %%d AND %s = %%d AND %s = %%d",
                                 SECTION_TO_BLOCK_TABLE,
                                 IS_ORE,
                                 BLOCK_NAME,
@@ -410,7 +419,7 @@ public class DBRegen {
                         x,
                         y,
                         z,
-                        world.toString()
+                        myWorldUid
                 ));
                 statement.execute(String.format(
                         String.format("INSERT INTO %s (%s, %s, %s)\n" +
@@ -440,13 +449,15 @@ public class DBRegen {
                 int x = response.getInt(X);
                 int y = response.getInt(Y);
                 int z = response.getInt(Z);
-                UUID worldUid = UUID.fromString(response.getString(WORLD_UUID));
+                int worldUid = response.getInt(WORLD_UUID);
                 Material block = Material.getMaterial(response.getString(BLOCK_NAME));
                 coords.add(new Coords(x, y, z, worldUid, Material.EMERALD_BLOCK, block));
             }
             response.close();
             statement.execute(String.format(UPDATE_IS_MARKED, marking, uid));
             statement.close();
+            for (Coords coord : coords)
+                coord.updateWorld();
             runAfter = updateSectionInfoDB(uid);
         }
         runAfter.run();
@@ -502,11 +513,14 @@ public class DBRegen {
                     "SELECT * FROM %s WHERE %s = %%d", SECTION_TO_BLOCK_TABLE, TOOL_UID), toolUid));
             while (response.next()) {
                 coords.add(new Coords(response.getInt(X), response.getInt(Y),
-                        response.getInt(Z), UUID.fromString(response.getString(WORLD_UUID)), null, null));
+                        response.getInt(Z), response.getInt(WORLD_UUID), null, null));
             }
             statement.execute(String.format(String.format("UPDATE %s\n" +
                     "SET %s = 'AIR'\n" +
                     "WHERE %s = %%d;", SECTION_TO_BLOCK_TABLE, BLOCK_NAME, TOOL_UID), toolUid));
+            for (Coords coord : coords) {
+                coord.updateWorld();
+            }
             runAfter = updateSectionInfoDB(toolUid);
         }
         runAfter.run();

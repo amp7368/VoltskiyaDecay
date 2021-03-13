@@ -1,6 +1,9 @@
 package apple.voltskiya.plugin;
 
 public class DBNames {
+    public static final String WORLD_UID_TO_MY_UID_TABLE = "world_uid_to_my_uid";
+    public static final String REAL_WORLD_UID = "read_world_uid";
+    public static final String MY_WORLD_UID = "my_world_uid";
 
     public static class Regen {
         public static final String DATABASE_NAME = "regen.db";

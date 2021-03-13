@@ -82,34 +82,24 @@ public class RegenSectionManager {
             Arrays.sort(sadnessChoices);
 
             Iterator<Map.Entry<RegenSectionInfo, Double>> iterator = sadnesses.entrySet().iterator();
-            if(!iterator.hasNext()){
+            if (!iterator.hasNext()) {
                 return;
             }
             Map.Entry<RegenSectionInfo, Double> currentSection = iterator.next();
             double offset = 0;
-            int sadnessAddition = 0;
             for (int i = 0; i < sadnessChoices.length; i++) {
-                if (currentSection.getKey().oreSadnessCount() - sadnessAddition <= 0) {
-                    if (iterator.hasNext()) {
-                        sadnessAddition = 0;
-                        currentSection = iterator.next();
-                    } else break;
-                    i--;
-                    continue;
-                }
                 double currentSadnessValue = sadnessChoices[i];
                 if (currentSadnessValue - offset > currentSection.getValue()) {
                     // go to the next sad ppl
                     if (iterator.hasNext()) {
-                        sadnessAddition = 0;
                         currentSection = iterator.next();
                     } else break;
                     i--;
                 } else {
                     // stay here and make ppl more sad
-                    sadnessAddition++;
                     currentSection.getKey().randomOreTodoIncrement();
                 }
+                offset += currentSadnessValue;
             }
         }
         for (RegenSectionInfo sectionInfo : sadnesses.keySet()) {
@@ -129,9 +119,8 @@ public class RegenSectionManager {
             }
             double[] sadnessChoices = new double[
                     Math.min(PluginOreRegen.REGEN_MAX_COUNT, (int) (totalSadness * PluginOreRegen.AIR_REGEN_MULTIPLIER *
-                            Math.pow(random.nextDouble(), 1 / PluginOreRegen.ORE_REGEN_INTENSITY)
+                            Math.pow(random.nextDouble(), -PluginOreRegen.AIR_REGEN_INTENSITY)
                     ))];
-
             for (int i = 0; i < sadnessChoices.length; i++) {
                 sadnessChoices[i] = random.nextDouble() * totalSadness;
             }
@@ -140,29 +129,19 @@ public class RegenSectionManager {
             Iterator<Map.Entry<RegenSectionInfo, Double>> iterator = sadnesses.entrySet().iterator();
             Map.Entry<RegenSectionInfo, Double> currentSection = iterator.next();
             double offset = 0;
-            int sadnessAddition = 0;
             for (int i = 0; i < sadnessChoices.length; i++) {
-                if (currentSection.getKey().airSadness() - sadnessAddition <= 0) {
-                    if (iterator.hasNext()) {
-                        sadnessAddition = 0;
-                        currentSection = iterator.next();
-                    } else break;
-                    i--;
-                    continue;
-                }
                 double currentSadnessValue = sadnessChoices[i];
                 if (currentSadnessValue - offset > currentSection.getValue()) {
                     // go to the next sad ppl
                     if (iterator.hasNext()) {
-                        sadnessAddition = 0;
                         currentSection = iterator.next();
                     } else break;
                     i--;
                 } else {
                     // stay here and make ppl more sad
-                    sadnessAddition++;
                     currentSection.getKey().randomAirTodoIncrement();
                 }
+                offset += currentSadnessValue;
             }
         }
         for (RegenSectionInfo sectionInfo : sadnesses.keySet()) {

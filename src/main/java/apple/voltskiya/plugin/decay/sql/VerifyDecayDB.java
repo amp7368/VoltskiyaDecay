@@ -24,7 +24,7 @@ public class VerifyDecayDB {
                     "    %s INTEGER     NOT NULL,\n" +
                     "    %s INTEGER     NOT NULL,\n" +
                     "    %s NCHAR(36) NOT NULL,\n" +
-                    "    %s NCHAR(36) NOT NULL,\n" +
+                    "    %s INTEGER     NOT NULL,\n" +
                     "    PRIMARY KEY (%s,%s,%s)\n",
             DBNames.PlayerBlock.X,
             DBNames.PlayerBlock.Y,
