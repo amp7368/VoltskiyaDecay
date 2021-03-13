@@ -6,7 +6,6 @@ import apple.voltskiya.plugin.ore_regen.brush.ActiveBrush;
 import apple.voltskiya.plugin.ore_regen.gui.InventoryRegenBox;
 import apple.voltskiya.plugin.ore_regen.gui.RegenConfigInstance;
 import apple.voltskiya.plugin.ore_regen.regen.RegenHeartbeat;
-import apple.voltskiya.plugin.ore_regen.sql.DBRegen;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.CommandPermission;
@@ -101,12 +100,23 @@ public class RegenCommand extends BaseCommand {
     public class Interval extends BaseCommand {
         @Subcommand("set")
         public void setInterval(Player player, long val) {
-            player.sendMessage(String.valueOf(ORE_REGEN_INTERVAL = val));
+            player.sendMessage(String.valueOf(REGEN_INTERVAL = val));
         }
 
         @Subcommand("get")
         public void getInterval(Player player) {
-            player.sendMessage(String.valueOf(ORE_REGEN_INTERVAL));
+            player.sendMessage(String.valueOf(REGEN_INTERVAL));
+        }
+    }@Subcommand("maxcount")
+    public class MaxCount extends BaseCommand {
+        @Subcommand("set")
+        public void setInterval(Player player, int val) {
+            player.sendMessage(String.valueOf(REGEN_MAX_COUNT = val));
+        }
+
+        @Subcommand("get")
+        public void getInterval(Player player) {
+            player.sendMessage(String.valueOf(REGEN_MAX_COUNT));
         }
     }
 

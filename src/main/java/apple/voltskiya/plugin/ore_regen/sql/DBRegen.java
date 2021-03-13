@@ -80,7 +80,7 @@ public class DBRegen {
                     if (x != 0) i++;
                     if (y != 0) i++;
                     if (z != 0) i++;
-                    if (i > 1) continue;
+                    if (i != 1) continue;
                     if (!isFirst) allAdjacent.append(" UNION ");
                     else isFirst = false;
                     allAdjacent.append(
@@ -231,7 +231,6 @@ public class DBRegen {
                                     "  AND (SELECT count(*) != 0\n" +
                                     "       FROM %s as nearby\n" +
                                     "       WHERE  nearby.%s != %%d\n" +
-                                    "       ORDER BY random()\n" +
                                     "       LIMIT 1\n" +
                                     ")\n" +
                                     "ORDER BY random()\n" +

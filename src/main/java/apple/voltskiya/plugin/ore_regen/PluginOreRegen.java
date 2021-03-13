@@ -13,7 +13,6 @@ import apple.voltskiya.plugin.ore_regen.sql.VerifyRegenDB;
 
 public class PluginOreRegen extends VoltskiyaModule {
     public static final int BRUSH_EXECUTE_INTERVAL = 20;
-    public static final int REGEN_MAX_COUNT = 100;
 
     public static long UPDATE_DECAY_DB_INTERVAL = 2000;
 
@@ -23,7 +22,9 @@ public class PluginOreRegen extends VoltskiyaModule {
     public static final int DEFAULT_RESISTANCE = 10;
     public static final int SUPPORT_RADIUS = 7;
 
-    public static long ORE_REGEN_INTERVAL = 20;
+    public static int REGEN_MAX_COUNT = 100;
+    public static long REGEN_INTERVAL = 20;
+
     public static double ORE_REGEN_MULTIPLIER = 10;
     public static double AIR_REGEN_MULTIPLIER = 100;
     public static double ORE_REGEN_INTENSITY = 10;

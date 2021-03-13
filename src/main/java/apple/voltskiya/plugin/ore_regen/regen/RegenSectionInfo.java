@@ -250,7 +250,7 @@ public class RegenSectionInfo {
         private boolean complete = false;
         private final List<Triple<Integer, Integer, Integer>> populateMe = new ArrayList<>();
         private int myWorldUid = -1;
-        private Material blockType ;
+        private Material blockType;
         private int myBlockType = -1;
         private Material oldBlockType = null;
         private int myOldBlockType = -1;
@@ -296,11 +296,15 @@ public class RegenSectionInfo {
         public void populate() {
             World world = Bukkit.getWorld(worldUid);
             if (world == null) return;
+            boolean isFirst = true;
             for (Triple<Integer, Integer, Integer> c : populateMe) {
-                if (hostBlocks.containsKey(blockType))
-                    System.out.println("AIR AT " + c.getX() + " " + c.getY() + " " + c.getZ());
-                else
-                    System.out.println(blockType.name() + " ORE AT " + c.getX() + " " + c.getY() + " " + c.getZ());
+                if (false) {
+                    isFirst = false;
+                    if (hostBlocks.containsKey(blockType))
+                        System.out.println("AIR AT " + c.getX() + " " + c.getY() + " " + c.getZ());
+                    else
+                        System.out.println(blockType.name() + " ORE AT " + c.getX() + " " + c.getY() + " " + c.getZ());
+                }
                 world.getBlockAt(c.getX(), c.getY(), c.getZ()).setType(blockType);
             }
         }
@@ -329,16 +333,16 @@ public class RegenSectionInfo {
         }
 
         public void updateWorldAndBlock() throws SQLException {
-            if (this.complete){
+            if (this.complete) {
                 if (this.worldUid == null)
                     this.worldUid = DBUtils.getRealWorldUid(myWorldUid);
                 else
                     this.myWorldUid = DBUtils.getMyWorldUid(worldUid.toString());
-                if(this.blockType == null)
+                if (this.blockType == null)
                     this.blockType = DBUtils.getBlockName(myBlockType);
                 else
                     this.myBlockType = DBUtils.getMyBlockUid(blockType);
-                if(this.oldBlockType == null)
+                if (this.oldBlockType == null)
                     this.oldBlockType = DBUtils.getBlockName(myOldBlockType);
                 else
                     this.myOldBlockType = DBUtils.getMyBlockUid(oldBlockType);

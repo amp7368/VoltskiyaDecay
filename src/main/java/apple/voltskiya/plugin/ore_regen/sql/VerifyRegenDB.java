@@ -66,8 +66,7 @@ public class VerifyRegenDB {
                     "    %s          BOOLEAN     NOT NULL,\n" +
                     "    %s          BOOLEAN     NOT NULL,\n" +
                     "    %s          SMALLINT    NOT NULL,\n" +
-                    "    PRIMARY KEY (%s, %s, %s, %s, %s)," +
-                    "    UNIQUE      (%s, %s, %s, %s)," +
+                    "    PRIMARY KEY (%s, %s, %s, %s)," +
                     " FOREIGN KEY (%s) REFERENCES %s",
             TOOL_UID,
             X,
@@ -77,12 +76,6 @@ public class VerifyRegenDB {
             IS_MARKED,
             IS_ORE,
             BLOCK_NAME,
-
-            TOOL_UID,
-            X,
-            Y,
-            Z,
-            WORLD_UUID,
 
             X,
             Y,
@@ -137,6 +130,7 @@ public class VerifyRegenDB {
             statement.execute(String.format(CREATE_TABLE_FORMAT, SECTION_TO_BLOCK_TABLE, SECTION_TO_BLOCK_CONTENT));
             statement.execute(String.format(CREATE_TABLE_FORMAT, WORLD_UID_TO_MY_UID_TABLE, WORLD_UID_TO_MY_UID_CONTENT));
             statement.execute(String.format(CREATE_TABLE_FORMAT, BLOCK_NAME_TO_MY_UID_TABLE, BLOCK_TO_MY_UID_CONTENT));
+            statement.execute(String.format("CREATE INDEX IF NOT EXISTS block ON %s (%s)\n", SECTION_TO_BLOCK_TABLE, TOOL_UID));
             statement.close();
         }
     }

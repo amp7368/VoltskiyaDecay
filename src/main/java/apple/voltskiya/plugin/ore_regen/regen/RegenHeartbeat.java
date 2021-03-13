@@ -5,7 +5,7 @@ import org.bukkit.Bukkit;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static apple.voltskiya.plugin.ore_regen.PluginOreRegen.ORE_REGEN_INTERVAL;
+import static apple.voltskiya.plugin.ore_regen.PluginOreRegen.REGEN_INTERVAL;
 
 public class RegenHeartbeat {
     private static boolean isHeartBeating = false;
@@ -14,7 +14,7 @@ public class RegenHeartbeat {
     public synchronized static void startBeating() {
         if (!isHeartBeating) {
             isHeartBeating = true;
-            Bukkit.getScheduler().scheduleSyncDelayedTask(VoltskiyaPlugin.get(), RegenHeartbeat::tick, ORE_REGEN_INTERVAL);
+            Bukkit.getScheduler().scheduleSyncDelayedTask(VoltskiyaPlugin.get(), RegenHeartbeat::tick, REGEN_INTERVAL);
         }
     }
 
@@ -28,7 +28,7 @@ public class RegenHeartbeat {
             new RHeartBeat().start();
         }
         if (isHeartBeating) {
-            Bukkit.getScheduler().scheduleSyncDelayedTask(VoltskiyaPlugin.get(), RegenHeartbeat::tick, ORE_REGEN_INTERVAL);
+            Bukkit.getScheduler().scheduleSyncDelayedTask(VoltskiyaPlugin.get(), RegenHeartbeat::tick, REGEN_INTERVAL);
         }
     }
 
