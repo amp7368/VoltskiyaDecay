@@ -121,6 +121,7 @@ public class VerifyRegenDB {
     private static void verifyTables() throws SQLException {
         synchronized (VerifyDecayDB.syncDB) {
             Statement statement = database.createStatement();
+            statement.execute("PRAGMA auto_vacuum = 1; -- full autovacuum");
             statement.execute("pragma busy_timeout=7000; -- Busy timeout set to 7000 milliseconds");
             statement.execute(String.format(CREATE_TABLE_FORMAT, TOOL_UID_TABLE, TOOL_UID_CONTENT));
             statement.execute(String.format(CREATE_TABLE_FORMAT, TOOL_TO_HOST_BLOCK_TABLE, TOOL_TO_BLOCK_CONTENT));

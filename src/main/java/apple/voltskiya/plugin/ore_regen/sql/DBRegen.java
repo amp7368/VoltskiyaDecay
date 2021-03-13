@@ -210,7 +210,7 @@ public class DBRegen {
                 oreChoices[i++].setCoords(x, y, z, myWorldUid, blockType);
             }
             for (RegenSectionInfo.OreVein oreChoice : oreChoices) {
-                oreChoice.updateWorldAndBlock();
+                if (oreChoice != null) oreChoice.updateWorldAndBlock();
             }
             runAfter = updateSectionInfoDB(uid);
         }
@@ -255,6 +255,7 @@ public class DBRegen {
             ResultSet response = statement.executeQuery(sql);
             int index = 0;
             while (response.next()) {
+                if (oreChoices[index] == null || index == oreChoices.length - 1) break;
                 oreChoices[index++].setCoords(
                         response.getInt(X),
                         response.getInt(Y),
@@ -264,7 +265,7 @@ public class DBRegen {
                 );
             }
             for (RegenSectionInfo.OreVein oreChoice : oreChoices) {
-                oreChoice.updateWorldAndBlock();
+                if (oreChoice != null) oreChoice.updateWorldAndBlock();
             }
         }
     }
@@ -489,6 +490,7 @@ public class DBRegen {
 
     public static Set<RegenSectionInfo> getSections() throws SQLException {
         Map<Long, RegenSectionInfoBuilder> regenSectionInfoBuilders = new HashMap<>();
+        Set<RegenSectionInfo> regenSectionInfos = new HashSet<>();
         synchronized (VerifyDecayDB.syncDB) {
             Statement statement = VerifyRegenDB.database.createStatement();
             ResultSet response = statement.executeQuery(GET_SECTIONS);
@@ -520,10 +522,9 @@ public class DBRegen {
                 regenSectionInfoBuilders.get(uid).addDesiredOreCount(response.getInt(BLOCK_NAME), response.getInt(BLOCK_COUNT));
             }
             statement.close();
+            for (RegenSectionInfoBuilder builder : regenSectionInfoBuilders.values())
+                regenSectionInfos.add(builder.build());
         }
-        Set<RegenSectionInfo> regenSectionInfos = new HashSet<>();
-        for (RegenSectionInfoBuilder builder : regenSectionInfoBuilders.values())
-            regenSectionInfos.add(builder.build());
         return regenSectionInfos;
     }
 

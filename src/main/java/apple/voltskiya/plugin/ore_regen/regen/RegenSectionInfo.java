@@ -27,13 +27,14 @@ public class RegenSectionInfo {
     private final static Random random = new Random();
 
     public RegenSectionInfo(Map<Material, Integer> actualBlockCount,
-                            int totalActualBlocks,
                             Map<Material, Double> hostBlocks,
                             Map<Material, VeinProbability> veinSizesProbability,
                             Map<Material, Double> desiredBlockDistributionPerc,
                             long uid) {
         this.actualBlockCount = actualBlockCount;
-        this.totalActualBlocks = totalActualBlocks;
+        for (Map.Entry<Material, Integer> count : actualBlockCount.entrySet()) {
+            if (count.getKey() != Material.AIR) this.totalActualBlocks += count.getValue();
+        }
         this.hostBlocks = hostBlocks;
         this.veinSizesProbability = veinSizesProbability;
         this.desiredBlockDistributionPerc = desiredBlockDistributionPerc;
@@ -41,14 +42,10 @@ public class RegenSectionInfo {
     }
 
 
-    public synchronized void update(Material blockName, int change) {
-        this.actualBlockCount.compute(blockName, (k, v) -> v == null ? change : v + change);
-    }
-
     public synchronized void update(Map<Material, Integer> blocks) {
         this.totalActualBlocks = 0;
-        for (Integer count : blocks.values()) {
-            this.totalActualBlocks += count;
+        for (Map.Entry<Material, Integer> count : blocks.entrySet()) {
+            if (count.getKey() != Material.AIR) this.totalActualBlocks += count.getValue();
         }
         this.actualBlockCount = blocks;
     }
@@ -133,7 +130,7 @@ public class RegenSectionInfo {
     }
 
     public synchronized double airSadness() {
-        return ((double) actualBlockCount.getOrDefault(Material.AIR, 0)) / totalActualBlocks;
+        return ((double) actualBlockCount.getOrDefault(Material.AIR, 0)) / (totalActualBlocks + actualBlockCount.getOrDefault(Material.AIR, 0));
     }
 
     public void airRandomExecute() {
@@ -296,15 +293,7 @@ public class RegenSectionInfo {
         public void populate() {
             World world = Bukkit.getWorld(worldUid);
             if (world == null) return;
-            boolean isFirst = true;
             for (Triple<Integer, Integer, Integer> c : populateMe) {
-                if (false) {
-                    isFirst = false;
-                    if (hostBlocks.containsKey(blockType))
-                        System.out.println("AIR AT " + c.getX() + " " + c.getY() + " " + c.getZ());
-                    else
-                        System.out.println(blockType.name() + " ORE AT " + c.getX() + " " + c.getY() + " " + c.getZ());
-                }
                 world.getBlockAt(c.getX(), c.getY(), c.getZ()).setType(blockType);
             }
         }

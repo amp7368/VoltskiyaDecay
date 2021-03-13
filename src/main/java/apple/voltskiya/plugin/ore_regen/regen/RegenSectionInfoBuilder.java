@@ -18,8 +18,6 @@ public class RegenSectionInfoBuilder {
     }
 
     public RegenSectionInfo build() throws SQLException {
-        int totalActualBlocks = 0;
-        for (Integer i : actualBlockCount.values()) totalActualBlocks += i;
         int totalVeinSizesCount = 0;
         for (List<Integer> sizes : veinSizes.values())
             // we're only counting them. not summing because a vein with 4 ore will be
@@ -54,7 +52,7 @@ public class RegenSectionInfoBuilder {
             hostBlockDistribution.put(DBUtils.getBlockName(entry.getKey()), ((double) entry.getValue()) / totalDistributionSum);
         }
 
-        return new RegenSectionInfo(actualBlockCountReal, totalActualBlocks, hostBlockDistribution, veinSizesProbability, desiredBlockDistributionPerc, uid);
+        return new RegenSectionInfo(actualBlockCountReal, hostBlockDistribution, veinSizesProbability, desiredBlockDistributionPerc, uid);
     }
 
     public void addActualBlockCount(int blockName, int blockCount) {
