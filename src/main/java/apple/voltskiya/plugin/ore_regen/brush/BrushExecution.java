@@ -82,6 +82,11 @@ public class BrushExecution {
             Bukkit.getScheduler().scheduleSyncDelayedTask(VoltskiyaPlugin.get(), () -> markBlocks(todo, true), 0);
         }
         try {
+            for (Map.Entry<Long, List<Coords>> tool : todo.entrySet()) {
+                for (Coords coords : tool.getValue()) {
+                    coords.updateBlockAndWorld();
+                }
+            }
             DBRegen.setMarked(todo, true);
         } catch (SQLException throwables) {
             throwables.printStackTrace();

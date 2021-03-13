@@ -4,6 +4,9 @@ public class DBNames {
     public static final String WORLD_UID_TO_MY_UID_TABLE = "world_uid_to_my_uid";
     public static final String REAL_WORLD_UID = "read_world_uid";
     public static final String MY_WORLD_UID = "my_world_uid";
+    public static final String BLOCK_NAME_TO_MY_UID_TABLE = "block_name_to_my_uid";
+    public static final String BLOCK_NAME = "block_name";
+    public static final String MY_BLOCK_UID = "my_block_uid";
 
     public static class Regen {
         public static final String DATABASE_NAME = "regen.db";
@@ -19,12 +22,10 @@ public class DBNames {
         public static final String BRUSH_TYPE = "brush_type";
         public static final String BRUSH_RADIUS = "brush_radius";
 
-        public static final String BLOCK_NAME = "block_name";
         public static final String BLOCK_COUNT = "block_count";
         public static final String X = "x";
         public static final String Y = "y";
         public static final String Z = "z";
-        public static final String WORLD_UUID = "world_uid";
         public static final String IS_MARKED = "is_marked";
         public static final String VEIN_INDEX = "vein_index";
         public static final String IS_ORE = "is_ore";

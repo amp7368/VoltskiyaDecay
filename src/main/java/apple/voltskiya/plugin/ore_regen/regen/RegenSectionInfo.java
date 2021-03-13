@@ -243,8 +243,6 @@ public class RegenSectionInfo {
 
     public class OreVein {
         private int veinSize;
-        private final Material blockType;
-        private Material oldBlockType = Material.AIR;
         private int x = 0;
         private int y = 0;
         private int z = 0;
@@ -252,31 +250,26 @@ public class RegenSectionInfo {
         private boolean complete = false;
         private final List<Triple<Integer, Integer, Integer>> populateMe = new ArrayList<>();
         private int myWorldUid = -1;
+        private Material blockType ;
+        private int myBlockType = -1;
+        private Material oldBlockType = null;
+        private int myOldBlockType = -1;
 
         public OreVein(Material blockType) {
             this.blockType = blockType;
             if (veinSizesProbability.containsKey(blockType)) {
                 VeinProbability probability = veinSizesProbability.get(blockType);
-                veinSize = probability.choose();
+                this.veinSize = probability.choose();
             } else veinSize = 1;
         }
 
-        public void setCoords(int x, int y, int z, int worldUid, Material oldBlockType) {
+        public void setCoords(int x, int y, int z, int worldUid, int oldBlockType) {
             this.x = x;
             this.y = y;
             this.z = z;
             this.myWorldUid = worldUid;
-            this.oldBlockType = oldBlockType;
-            complete = true;
-        }
-
-        public void setCoords(int x, int y, int z, UUID worldUid, Material oldBlockType) {
-            this.x = x;
-            this.y = y;
-            this.z = z;
-            this.worldUid = worldUid;
-            this.oldBlockType = oldBlockType;
-            complete = true;
+            this.myOldBlockType = oldBlockType;
+            this.complete = true;
         }
 
         public void populateInit() {
@@ -335,12 +328,21 @@ public class RegenSectionInfo {
             return new ArrayList<>(xyz);
         }
 
-        public void updateWorldUID() throws SQLException {
-            if (this.complete)
+        public void updateWorldAndBlock() throws SQLException {
+            if (this.complete){
                 if (this.worldUid == null)
                     this.worldUid = DBUtils.getRealWorldUid(myWorldUid);
                 else
                     this.myWorldUid = DBUtils.getMyWorldUid(worldUid.toString());
+                if(this.blockType == null)
+                    this.blockType = DBUtils.getBlockName(myBlockType);
+                else
+                    this.myBlockType = DBUtils.getMyBlockUid(blockType);
+                if(this.oldBlockType == null)
+                    this.oldBlockType = DBUtils.getBlockName(myOldBlockType);
+                else
+                    this.myOldBlockType = DBUtils.getMyBlockUid(oldBlockType);
+            }
         }
     }
 }

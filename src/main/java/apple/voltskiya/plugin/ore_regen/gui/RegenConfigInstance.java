@@ -1,8 +1,11 @@
 package apple.voltskiya.plugin.ore_regen.gui;
 
 import apple.voltskiya.plugin.VoltskiyaPlugin;
+import apple.voltskiya.plugin.ore_regen.sql.DBUtils;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,15 +57,27 @@ public class RegenConfigInstance {
         CORNER_SELECT
     }
 
-    public Set<Map.Entry<String, Integer>> getHostBlockToCount() {
-        return hostBlockToCount.entrySet();
+    public Set<Map.Entry<Integer, Integer>> getHostBlockToCount() throws SQLException {
+        Map<Integer, Integer> blocks = new HashMap<>();
+        for (Map.Entry<String, Integer> veinSize : hostBlockToCount.entrySet()) {
+            blocks.put(DBUtils.getMyBlockUid(Material.valueOf(veinSize.getKey())), veinSize.getValue());
+        }
+        return blocks.entrySet();
     }
 
-    public Set<Map.Entry<String, List<Integer>>> getVeinSizeBlockToCount() {
-        return veinSizeBlockToCount.entrySet();
+    public Set<Map.Entry<Integer, List<Integer>>> getVeinSizeBlockToCount() throws SQLException {
+        Map<Integer, List<Integer>> blocks = new HashMap<>();
+        for (Map.Entry<String, List<Integer>> veinSize : veinSizeBlockToCount.entrySet()) {
+            blocks.put(DBUtils.getMyBlockUid(Material.valueOf(veinSize.getKey())), veinSize.getValue());
+        }
+        return blocks.entrySet();
     }
 
-    public Set<Map.Entry<String, Integer>> getDensityDistributionBlockToCount() {
-        return densityDistributionBlockToCount.entrySet();
+    public Set<Map.Entry<Integer, Integer>> getDensityDistributionBlockToCount() throws SQLException {
+        Map<Integer, Integer> blocks = new HashMap<>();
+        for (Map.Entry<String, Integer> veinSize : densityDistributionBlockToCount.entrySet()) {
+            blocks.put(DBUtils.getMyBlockUid(Material.valueOf(veinSize.getKey())), veinSize.getValue());
+        }
+        return blocks.entrySet();
     }
 }

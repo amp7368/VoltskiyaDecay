@@ -13,6 +13,7 @@ import java.sql.Statement;
 import java.util.logging.Level;
 
 import static apple.voltskiya.plugin.DBNames.*;
+import static apple.voltskiya.plugin.DBNames.PlayerBlock.WORLD_UUID;
 import static apple.voltskiya.plugin.DBNames.Regen.*;
 
 public class VerifyRegenDB {
@@ -58,13 +59,13 @@ public class VerifyRegenDB {
     );
     private static final String SECTION_TO_BLOCK_CONTENT = String.format(
             "%s   INTEGER      NOT NULL,\n" +
-                    "    %s          INTEGER     NOT NULL,\n" +
+                    "    %s          SMALLINT    NOT NULL,\n" +
                     "    %s          SMALLINT    NOT NULL,\n" +
                     "    %s          SMALLINT    NOT NULL,\n" +
                     "    %s          TINYINT     NOT NULL,\n" +
                     "    %s          BOOLEAN     NOT NULL,\n" +
-                    "    %s          SMALLINT    NOT NULL,\n" +
                     "    %s          BOOLEAN     NOT NULL,\n" +
+                    "    %s          SMALLINT    NOT NULL,\n" +
                     "    PRIMARY KEY (%s, %s, %s, %s, %s)," +
                     "    UNIQUE      (%s, %s, %s, %s)," +
                     " FOREIGN KEY (%s) REFERENCES %s",
@@ -93,10 +94,10 @@ public class VerifyRegenDB {
     );
     private static final String WORLD_UID_TO_MY_UID_CONTENT = String.format(
             "   %s NCHAR(36) NOT NULL UNIQUE PRIMARY KEY,\n" +
-                    "    %s   INTEGER   NOT NULL UNIQUE", REAL_WORLD_UID, MY_WORLD_UID);
-    private static final String BLOCK_TO_MY_UID = String.format(
-            "   %s NCHAR(50) NOT NULL UNIQUE PRIMARY KEY,\n" +
-                    "    %s   INTEGER   NOT NULL UNIQUE", REAL_WORLD_UID, MY_WORLD_UID);
+                    "    %s   TINYINT   NOT NULL UNIQUE", REAL_WORLD_UID, MY_WORLD_UID);
+    private static final String BLOCK_TO_MY_UID_CONTENT = String.format(
+            "   %s VARCHAR(50) NOT NULL UNIQUE PRIMARY KEY,\n" +
+                    "    %s   SMALLINT   NOT NULL UNIQUE", BLOCK_NAME, MY_BLOCK_UID);
     protected static Connection database;
 
     // set up the database file
@@ -135,6 +136,7 @@ public class VerifyRegenDB {
             statement.execute(String.format(CREATE_TABLE_FORMAT, SECTION_INFO_TABLE, TOOL_TO_BLOCK_CONTENT));
             statement.execute(String.format(CREATE_TABLE_FORMAT, SECTION_TO_BLOCK_TABLE, SECTION_TO_BLOCK_CONTENT));
             statement.execute(String.format(CREATE_TABLE_FORMAT, WORLD_UID_TO_MY_UID_TABLE, WORLD_UID_TO_MY_UID_CONTENT));
+            statement.execute(String.format(CREATE_TABLE_FORMAT, BLOCK_NAME_TO_MY_UID_TABLE, BLOCK_TO_MY_UID_CONTENT));
             statement.close();
         }
     }
