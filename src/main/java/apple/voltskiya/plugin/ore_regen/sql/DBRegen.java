@@ -214,7 +214,6 @@ public class DBRegen {
             }
             runAfter = updateSectionInfoDB(uid);
         }
-
         runAfter.run();
     }
 
@@ -264,22 +263,24 @@ public class DBRegen {
                         air
                 );
             }
+            response.close();
+            statement.close();
             for (RegenSectionInfo.OreVein oreChoice : oreChoices) {
                 if (oreChoice != null) oreChoice.updateWorldAndBlock();
             }
         }
     }
 
-    public static void setMarked(Map<Long, List<Coords>> allCoords, boolean marking) throws SQLException {
+    public static void setMarked(Map<Long, List<Coords.CoordsWithUID>> allCoords, boolean marking) throws SQLException {
         List<Runnable> runAfter = new ArrayList<>();
         synchronized (VerifyDecayDB.syncDB) {
             VerifyRegenDB.database.setAutoCommit(false);
             Statement statement = VerifyRegenDB.database.createStatement();
 
             Map<Pair<Long, Material>, Integer> changeInBlockCount = new HashMap<>();
-            for (Map.Entry<Long, List<Coords>> tool : allCoords.entrySet()) {
+            for (Map.Entry<Long, List<Coords.CoordsWithUID>> tool : allCoords.entrySet()) {
                 long uid = tool.getKey();
-                for (Coords coords : tool.getValue()) {
+                for (Coords.CoordsWithUID coords : tool.getValue()) {
                     statement.addBatch(String.format(INSERT_SECTION_TO_BLOCK,
                             uid,
                             coords.x,
@@ -410,23 +411,35 @@ public class DBRegen {
         }
     }
 
-    public static void setBlock(UUID world, int x, int y, int z, Material oldBlock, Material newBlock) throws
-            SQLException {
+    /**
+     * set the designated coords from the oldBlock to the newBlock in the database and update SectionInfo
+     *
+     * @param blocksToUpdate the blocks to update in the DB
+     * @return true if the insertion updated a section, otherwise false
+     * @throws SQLException shouldn't be thrown
+     */
+    public static boolean setBlock(List<Coords> blocksToUpdate) throws SQLException {
+        List<Runnable> updateSectionsRunnables = new ArrayList<>();
         synchronized (VerifyDecayDB.syncDB) {
-            int myOldBlockUid = DBUtils.getMyBlockUid(oldBlock);
-            int myNewBlockUid = DBUtils.getMyBlockUid(newBlock);
-            int myWorldUid = DBUtils.getMyWorldUid(world.toString());
             Statement statement = VerifyRegenDB.database.createStatement();
-            ResultSet response = statement.executeQuery(
-                    String.format(
-                            String.format("SELECT %s FROM %s " +
-                                            "WHERE %s = %%d AND %s = %%d AND %s = %%d AND %s = %%d",
-                                    TOOL_UID, SECTION_TO_BLOCK_TABLE, X, Y, Z, WORLD_UUID
-                            ), x, y, z, myWorldUid
-                    )
-            );
-            if (!response.isClosed()) {
-                long toolUid = response.getLong(TOOL_UID);
+            Set<Integer> toolIdsToRecount = new HashSet<>();
+            for (Coords blockToUpdate : blocksToUpdate) {
+                int myOldBlockUid = DBUtils.getMyBlockUid(blockToUpdate.lastBlock);
+                int myNewBlockUid = DBUtils.getMyBlockUid(blockToUpdate.newBlock);
+                int myWorldUid = DBUtils.getMyWorldUid(blockToUpdate.worldUID.toString());
+                ResultSet response = statement.executeQuery(
+                        String.format(
+                                String.format("SELECT %s FROM %s " +
+                                                "WHERE %s = %%d AND %s = %%d AND %s = %%d AND %s = %%d",
+                                        TOOL_UID, SECTION_TO_BLOCK_TABLE, X, Y, Z, WORLD_UUID
+                                ), blockToUpdate.x, blockToUpdate.y, blockToUpdate.z, myWorldUid
+                        )
+                );
+                if (response.isClosed()) {
+                    return false;
+                }
+                int toolUid = response.getInt(TOOL_UID);
+                toolIdsToRecount.add(toolUid);
                 statement.execute(String.format(
                         String.format("UPDATE %s\n" +
                                         "SET %s = false, %s = %%d\n" +
@@ -440,32 +453,26 @@ public class DBRegen {
                                 WORLD_UUID
                         ),
                         myNewBlockUid,
-                        x,
-                        y,
-                        z,
+                        blockToUpdate.x,
+                        blockToUpdate.y,
+                        blockToUpdate.z,
                         myWorldUid
                 ));
-                statement.execute(String.format(
-                        String.format("INSERT INTO %s (%s, %s, %s)\n" +
-                                        "VALUES (%%d, %%d, -1)\n" +
-                                        "ON CONFLICT (%s,%s) DO UPDATE SET %s = %s - 1;\n",
-                                SECTION_INFO_TABLE, TOOL_UID, BLOCK_NAME, BLOCK_COUNT, TOOL_UID, BLOCK_NAME, BLOCK_COUNT, BLOCK_COUNT
-                        ), toolUid, myOldBlockUid
-                ));
-                statement.execute(String.format(
-                        String.format("INSERT INTO %s (%s, %s, %s)\n" +
-                                        "VALUES (%%d, %%d, 1)\n" +
-                                        "ON CONFLICT (%s,%s) DO UPDATE SET %s = %s + 1;\n",
-                                SECTION_INFO_TABLE, TOOL_UID, BLOCK_NAME, BLOCK_COUNT, TOOL_UID, BLOCK_NAME, BLOCK_COUNT, BLOCK_COUNT
-                        ), toolUid, myNewBlockUid
-                ));
+                // update the toolIds section info
+                for (Integer toolId : toolIdsToRecount) {
+                    updateSectionsRunnables.add(updateSectionInfoDB(toolId));
+                }
             }
+            for (Runnable update : updateSectionsRunnables) {
+                update.run();
+            }
+            return true;
         }
     }
 
-    public static List<Coords> getAndUpdateMarking(long uid, boolean marking) throws SQLException {
+    public static List<Coords.CoordsWithUID> getAndUpdateMarking(long uid, boolean marking) throws SQLException {
         Runnable runAfter;
-        List<Coords> coords = new ArrayList<>();
+        List<Coords.CoordsWithUID> coords = new ArrayList<>();
         synchronized (VerifyDecayDB.syncDB) {
             Statement statement = VerifyRegenDB.database.createStatement();
             ResultSet response = statement.executeQuery(String.format(GET_MARKED_BLOCKS_OF_TOOL, uid, !marking));
@@ -475,12 +482,12 @@ public class DBRegen {
                 int z = response.getInt(Z);
                 int worldUid = response.getInt(WORLD_UUID);
                 int block = response.getInt(BLOCK_NAME);
-                coords.add(new Coords(x, y, z, worldUid, Material.EMERALD_BLOCK, block));
+                coords.add(new Coords.CoordsWithUID(x, y, z, worldUid, Material.EMERALD_BLOCK, block));
             }
             response.close();
             statement.execute(String.format(UPDATE_IS_MARKED, marking, uid));
             statement.close();
-            for (Coords coord : coords)
+            for (Coords.CoordsWithUID coord : coords)
                 coord.updateBlockAndWorld();
             runAfter = updateSectionInfoDB(uid);
         }
@@ -528,8 +535,8 @@ public class DBRegen {
         return regenSectionInfos;
     }
 
-    public static List<Coords> destroyBlocks(long toolUid) throws SQLException {
-        List<Coords> coords = new ArrayList<>();
+    public static List<Coords.CoordsWithUID> destroyBlocks(long toolUid) throws SQLException {
+        List<Coords.CoordsWithUID> coords = new ArrayList<>();
         Runnable runAfter;
         synchronized (VerifyDecayDB.syncDB) {
             int air = DBUtils.getMyAir();
@@ -537,13 +544,13 @@ public class DBRegen {
             ResultSet response = statement.executeQuery(String.format(String.format(
                     "SELECT * FROM %s WHERE %s = %%d", SECTION_TO_BLOCK_TABLE, TOOL_UID), toolUid));
             while (response.next()) {
-                coords.add(new Coords(response.getInt(X), response.getInt(Y),
+                coords.add(new Coords.CoordsWithUID(response.getInt(X), response.getInt(Y),
                         response.getInt(Z), response.getInt(WORLD_UUID), null, response.getInt(BLOCK_NAME)));
             }
             statement.execute(String.format(String.format("UPDATE %s\n" +
                     "SET %s = %%d\n" +
                     "WHERE %s = %%d;", SECTION_TO_BLOCK_TABLE, BLOCK_NAME, TOOL_UID), air, toolUid));
-            for (Coords coord : coords) {
+            for (Coords.CoordsWithUID coord : coords) {
                 coord.updateBlockAndWorld();
             }
             runAfter = updateSectionInfoDB(toolUid);

@@ -64,9 +64,8 @@ public class RegenSectionInfoBuilder {
     }
 
     public void addVeinSizes(int blockName, int desiredCount) {
-        final int material = blockName;
-        veinSizes.putIfAbsent(material, new ArrayList<>());
-        veinSizes.get(material).add(desiredCount);
+        veinSizes.putIfAbsent(blockName, new ArrayList<>());
+        veinSizes.get(blockName).add(desiredCount);
     }
 
     public void addDesiredOreCount(int blockName, int desiredCount) {

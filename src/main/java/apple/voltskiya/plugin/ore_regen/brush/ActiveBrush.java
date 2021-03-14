@@ -49,7 +49,7 @@ public class ActiveBrush {
     }
 
     public synchronized void destoryBlocks() {
-        List<Coords> coords;
+        List<Coords.CoordsWithUID> coords;
         try {
             coords = DBRegen.destroyBlocks(uid);
         } catch (SQLException throwables) {
@@ -57,7 +57,7 @@ public class ActiveBrush {
             return;
         }
         Bukkit.getScheduler().scheduleSyncDelayedTask(VoltskiyaPlugin.get(), () -> {
-            for (Coords coord : coords) {
+            for (Coords.CoordsWithUID coord : coords) {
                 World world = Bukkit.getWorld(coord.worldUID);
                 if (world != null)
                     world.getBlockAt(coord.x, coord.y, coord.z).setType(Material.AIR);
@@ -117,7 +117,7 @@ public class ActiveBrush {
 
     private void addCubeBlocks(int xMin, int yMin, int zMin, int xMax, int yMax, int zMax, int currentX, int currentY, int currentZ, World world) {
         UUID worldUid = world.getUID();
-        List<Coords> coords = new ArrayList<>();
+        List<Coords.CoordsWithUID> coords = new ArrayList<>();
         int count = 0;
         boolean isFinished = true;
         boolean firstTime = true;
@@ -134,7 +134,7 @@ public class ActiveBrush {
                     Material materialThere = world.getBlockAt(x, y, z).getType();
                     if (this.hostBlocks.contains(materialThere)) {
                         try {
-                            coords.add(new Coords(x, y, z, worldUid, markerBlock, materialThere));
+                            coords.add(new Coords.CoordsWithUID(x, y, z, worldUid, markerBlock, materialThere));
                         } catch (SQLException throwables) {
                             throwables.printStackTrace();
                         }
@@ -172,17 +172,17 @@ public class ActiveBrush {
             }
             isBusy = true;
         }
-        List<Coords> coordsToUnmark;
+        List<Coords.CoordsWithUID> coordsToUnmark;
         try {
             coordsToUnmark = DBRegen.getAndUpdateMarking(uid, marking);
         } catch (SQLException throwables) {
             throwables.printStackTrace();
             return;
         }
-        List<List<Coords>> dividedCoordsToMark = new ArrayList<>();
+        List<List<Coords.CoordsWithUID>> dividedCoordsToMark = new ArrayList<>();
         int i = 0;
-        List<Coords> current = new ArrayList<>(BLOCKS_TO_UPDATE_AT_ONCE);
-        for (Coords coords : coordsToUnmark) {
+        List<Coords.CoordsWithUID> current = new ArrayList<>(BLOCKS_TO_UPDATE_AT_ONCE);
+        for (Coords.CoordsWithUID coords : coordsToUnmark) {
             if (++i % BLOCKS_TO_UPDATE_AT_ONCE == 0) {
                 dividedCoordsToMark.add(current);
                 current = new ArrayList<>(BLOCKS_TO_UPDATE_AT_ONCE);
@@ -193,7 +193,7 @@ public class ActiveBrush {
         markDivided(dividedCoordsToMark, marking, afterFinish);
     }
 
-    private void markDivided(List<List<Coords>> dividedCoordsTomark, boolean marking, Runnable afterFinish) {
+    private void markDivided(List<List<Coords.CoordsWithUID>> dividedCoordsTomark, boolean marking, Runnable afterFinish) {
         if (dividedCoordsTomark.isEmpty()) {
             afterFinish.run();
             synchronized (WAIT_TO_UPDATE_OBJECT) {
@@ -215,7 +215,7 @@ public class ActiveBrush {
         // make this happen on the main thread
         Bukkit.getScheduler().scheduleSyncDelayedTask(VoltskiyaPlugin.get(), () -> {
             if (!dividedCoordsTomark.isEmpty())
-                for (Coords coords : dividedCoordsTomark.remove(0)) {
+                for (Coords.CoordsWithUID coords : dividedCoordsTomark.remove(0)) {
                     coords.mark(marking);
                 }
             new SubIsBusySetFalse().start();

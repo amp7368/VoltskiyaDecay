@@ -72,6 +72,8 @@ public class RegenSectionManager {
                 totalSadness += sadness;
                 sadnesses.put(sectionInfo, sadness);
             }
+            System.out.println("total sadness " + totalSadness);
+            System.out.println("total sadnessCount " + sadnessCount);
             final int sadness = Math.min(PluginOreRegen.REGEN_MAX_COUNT, (int) (totalSadness * PluginOreRegen.ORE_REGEN_MULTIPLIER * sadnessCount *
                     Math.pow(random.nextDouble(), 1 / PluginOreRegen.ORE_REGEN_INTENSITY)
             ));

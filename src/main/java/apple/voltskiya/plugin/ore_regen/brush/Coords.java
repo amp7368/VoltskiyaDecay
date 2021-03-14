@@ -12,44 +12,46 @@ public class Coords {
     public int x;
     public int y;
     public int z;
-    public Material markerBlock;
-    public Material lastBlock = null;
-    public int myLastBlockUid = -1;
-    public UUID worldUID = null;
-    public int myWorldUID = -1;
+    public Material newBlock;
+    public Material lastBlock;
+    public UUID worldUID;
 
-    public Coords(int x, int y, int z, UUID worldUID, Material markerBlock, Material lastBlock) throws SQLException {
+    public Coords(int x, int y, int z, UUID worldUID, Material markerBlock, Material lastBlock) {
         this.x = x;
         this.y = y;
         this.z = z;
         this.worldUID = worldUID;
-        this.markerBlock = markerBlock;
+        this.newBlock = markerBlock;
         this.lastBlock = lastBlock;
-        this.myWorldUID = DBUtils.getMyWorldUid(worldUID.toString());
     }
 
-    public Coords(int x, int y, int z, int worldUID, Material markerBlock, int lastBlock) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
-        this.myWorldUID = worldUID;
-        this.markerBlock = markerBlock;
-        this.myLastBlockUid = lastBlock;
-    }
+    public static class CoordsWithUID extends Coords {
+        public int myLastBlockUid = -1;
+        public int myWorldUID = -1;
 
-    public void updateBlockAndWorld() throws SQLException {
-        if (worldUID == null)
-            this.worldUID = DBUtils.getRealWorldUid(myWorldUID);
-        else
+        public CoordsWithUID(int x, int y, int z, UUID worldUID, Material markerBlock, Material lastBlock) throws SQLException {
+            super(x, y, z, worldUID, markerBlock, lastBlock);
             this.myWorldUID = DBUtils.getMyWorldUid(worldUID.toString());
-        if (lastBlock == null)
-            this.lastBlock = DBUtils.getBlockName(myLastBlockUid);
-        else
-            this.myLastBlockUid = DBUtils.getMyBlockUid(lastBlock);
-    }
+        }
 
-    public void mark(boolean marking) {
-        World world = Bukkit.getWorld(worldUID);
-        if (world != null) world.getBlockAt(x, y, z).setType(marking ? markerBlock : lastBlock);
+        public CoordsWithUID(int x, int y, int z, int worldUID, Material markerBlock, int lastBlock) {
+            super(x, y, z, null, markerBlock, null);
+        }
+
+        public void updateBlockAndWorld() throws SQLException {
+            if (worldUID == null)
+                this.worldUID = DBUtils.getRealWorldUid(myWorldUID);
+            else
+                this.myWorldUID = DBUtils.getMyWorldUid(worldUID.toString());
+            if (lastBlock == null)
+                this.lastBlock = DBUtils.getBlockName(myLastBlockUid);
+            else
+                this.myLastBlockUid = DBUtils.getMyBlockUid(lastBlock);
+        }
+
+        public void mark(boolean marking) {
+            World world = Bukkit.getWorld(worldUID);
+            if (world != null) world.getBlockAt(x, y, z).setType(marking ? newBlock : lastBlock);
+        }
     }
 }

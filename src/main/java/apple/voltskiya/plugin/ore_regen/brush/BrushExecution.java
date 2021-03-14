@@ -7,53 +7,33 @@ import org.bukkit.Bukkit;
 
 import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static apple.voltskiya.plugin.ore_regen.PluginOreRegen.BRUSH_EXECUTE_INTERVAL;
 
 public class BrushExecution {
     private static final int BLOCKS_PER_INTERVAL = 10000;
     private static final double DROP_IN_TPS = 3;
-    private static final Map<Long, List<Coords>> toolToImpact = new HashMap<>();
+    private static Map<Long, List<Coords.CoordsWithUID>> toolToImpact = new HashMap<>();
 
     private static final Object TOOL_TO_IMPACT_SYNC_OBJECT = new Object();
 
     private static final Object WRITING_BUSY_SYNC_OBJECT = new Object();
-    private static final long WRITING_BUSY_SYNC_TIMEOUT = 10000;
     private static boolean isBusy = false;
 
-    public static void addTodo(long uid, List<Coords> coords) {
+    public static void addTodo(long uid, List<Coords.CoordsWithUID> coords) {
         synchronized (TOOL_TO_IMPACT_SYNC_OBJECT) {
-            List<Coords> last = toolToImpact.putIfAbsent(uid, coords);
+            List<Coords.CoordsWithUID> last = toolToImpact.putIfAbsent(uid, coords);
             if (last != null) last.addAll(coords);
         }
     }
 
     public static void completeTodo() {
-        synchronized (WRITING_BUSY_SYNC_OBJECT) {
-            while (isBusy) {
-                try {
-                    WRITING_BUSY_SYNC_OBJECT.wait(WRITING_BUSY_SYNC_TIMEOUT);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            double[] tps = Bukkit.getTPS();
-            if (tps[0] < tps[2] - DROP_IN_TPS || toolToImpact.isEmpty()) {
-                isBusy = false;
-                WRITING_BUSY_SYNC_OBJECT.notify();
-                return;
-            }
-            isBusy = true;
-        }
-
-        final Map<Long, List<Coords>> todo = new HashMap<>();
+        final Map<Long, List<Coords.CoordsWithUID>> todo = new HashMap<>();
         synchronized (TOOL_TO_IMPACT_SYNC_OBJECT) {
             Set<Long> keys = toolToImpact.keySet();
             Iterator<Long> keysIterator = keys.iterator();
             Long key = keysIterator.next();
-            List<Coords> value = toolToImpact.get(key);
+            List<Coords.CoordsWithUID> value = toolToImpact.get(key);
             for (int i = 0; i < BLOCKS_PER_INTERVAL; ) {
                 if (value.size() < BLOCKS_PER_INTERVAL - i) {
                     i += value.size();
@@ -64,7 +44,7 @@ public class BrushExecution {
                     else
                         break; // our job is done
                 } else {
-                    List<Coords> todoFromKey = new ArrayList<>();
+                    List<Coords.CoordsWithUID> todoFromKey = new ArrayList<>();
                     todo.putIfAbsent(key, todoFromKey);
                     while (i++ < BLOCKS_PER_INTERVAL) {
                         todo.get(key).add(value.remove(0));
@@ -72,9 +52,10 @@ public class BrushExecution {
                 }
             }
             if (todo.isEmpty()) {
+                if (toolToImpact.isEmpty())
+                    toolToImpact = new HashMap<>();
                 synchronized (WRITING_BUSY_SYNC_OBJECT) {
                     isBusy = false;
-                    WRITING_BUSY_SYNC_OBJECT.notify();
                     return;
                 }
             }
@@ -82,8 +63,8 @@ public class BrushExecution {
             Bukkit.getScheduler().scheduleSyncDelayedTask(VoltskiyaPlugin.get(), () -> markBlocks(todo, true), 0);
         }
         try {
-            for (Map.Entry<Long, List<Coords>> tool : todo.entrySet()) {
-                for (Coords coords : tool.getValue()) {
+            for (Map.Entry<Long, List<Coords.CoordsWithUID>> tool : todo.entrySet()) {
+                for (Coords.CoordsWithUID coords : tool.getValue()) {
                     coords.updateBlockAndWorld();
                 }
             }
@@ -93,9 +74,9 @@ public class BrushExecution {
         }
     }
 
-    public static void markBlocks(Map<Long, List<Coords>> allCoords, boolean marking) {
-        for (List<Coords> coords : allCoords.values()) {
-            for (Coords coord : coords) {
+    public static void markBlocks(Map<Long, List<Coords.CoordsWithUID>> allCoords, boolean marking) {
+        for (List<Coords.CoordsWithUID> coords : allCoords.values()) {
+            for (Coords.CoordsWithUID coord : coords) {
                 coord.mark(marking);
             }
         }
@@ -104,7 +85,6 @@ public class BrushExecution {
         new Thread(() -> {
             synchronized (WRITING_BUSY_SYNC_OBJECT) {
                 isBusy = false;
-                WRITING_BUSY_SYNC_OBJECT.notify();
             }
         }).start();
 
@@ -120,7 +100,18 @@ public class BrushExecution {
         @Override
         public void run() {
             synchronized (WRITING_BUSY_SYNC_OBJECT) {
-                if (isBusy) return;
+                if (isBusy) {
+                    System.out.println("isbusy");
+                    return;
+                }
+                if (toolToImpact.isEmpty()) {
+                    return;
+                }
+                double[] tps = Bukkit.getTPS();
+                if (tps[0] < tps[2] - DROP_IN_TPS) {
+                    return;
+                }
+                isBusy = true;
             }
             BrushExecution.completeTodo();
         }

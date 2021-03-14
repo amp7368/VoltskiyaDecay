@@ -32,6 +32,7 @@ public class RegenSectionInfo {
                             Map<Material, Double> desiredBlockDistributionPerc,
                             long uid) {
         this.actualBlockCount = actualBlockCount;
+        this.totalActualBlocks = 0;
         for (Map.Entry<Material, Integer> count : actualBlockCount.entrySet()) {
             if (count.getKey() != Material.AIR) this.totalActualBlocks += count.getValue();
         }
@@ -62,8 +63,8 @@ public class RegenSectionInfo {
         for (Material material : desiredBlockDistributionPerc.keySet()) {
             if (!hostBlocks.containsKey(material)) {
                 if (totalActualBlocks != 0) {
-                    sadness += (desiredBlockDistributionPerc.get(material) -
-                            (((double) actualBlockCount.getOrDefault(material, 0)) / totalActualBlocks));
+                    sadness += desiredBlockDistributionPerc.get(material) -
+                            (((double) actualBlockCount.getOrDefault(material, 0)) / totalActualBlocks);
                 }
             }
         }
@@ -73,11 +74,12 @@ public class RegenSectionInfo {
     public synchronized int oreSadnessCount() {
         double count = 0;
         for (Material material : desiredBlockDistributionPerc.keySet()) {
-            if (!hostBlocks.containsKey(material) && veinSizesProbability.containsKey(material)) {
+            if (!hostBlocks.containsKey(material) && veinSizesProbability.containsKey(material) && totalActualBlocks != 0) {
                 count += Math.max((
                                 (desiredBlockDistributionPerc.get(material) * totalActualBlocks -
-                                        actualBlockCount.getOrDefault(material, 0)) / veinSizesProbability.get(material).getAvgSize()) *
-                                ((double) (totalActualBlocks - actualBlockCount.getOrDefault(Material.AIR, 0))) / totalActualBlocks,
+                                        actualBlockCount.getOrDefault(material, 0)) *
+                                        ((double) (actualBlockCount.getOrDefault(Material.AIR, 0))) / totalActualBlocks /
+                                        veinSizesProbability.get(material).getAvgSize()),
                         0);
             }
         }
