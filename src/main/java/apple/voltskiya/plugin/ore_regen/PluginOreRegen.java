@@ -14,7 +14,7 @@ import apple.voltskiya.plugin.ore_regen.sql.VerifyRegenDB;
 
 public class PluginOreRegen extends VoltskiyaModule {
     public static final int BRUSH_EXECUTE_INTERVAL = 20;
-    public static final long INTERVENTION_EXECUTE_INTERVAL = 160;
+    public static final long INTERVENTION_EXECUTE_INTERVAL = 40;
 
     public static long UPDATE_DECAY_DB_INTERVAL = 2000;
 
@@ -27,23 +27,23 @@ public class PluginOreRegen extends VoltskiyaModule {
     public static int REGEN_MAX_COUNT = 100;
     public static long REGEN_INTERVAL = 20;
 
-    public static double ORE_REGEN_MULTIPLIER = 10;
-    public static double AIR_REGEN_MULTIPLIER = 100;
-    public static double ORE_REGEN_INTENSITY = 10;
-    public static double AIR_REGEN_INTENSITY = 10;
+    public static double ORE_REGEN_MULTIPLIER = 1;
+    public static double AIR_REGEN_MULTIPLIER = 1;
+    public static double ORE_REGEN_INTENSITY = .5;
+    public static double AIR_REGEN_INTENSITY = .5;
 
     @Override
     public void enable() {
-//        VerifyRegenDB.initialize();
-//        RegenSectionManager.initialize();
-//        new InventoryRegenListener();
-//        new BrushUsageListener();
-//        new RegenPlayerInterventionListener();
-//        new RegenCommand();
+        VerifyRegenDB.initialize();
+        RegenSectionManager.initialize();
+        new InventoryRegenListener();
+        new BrushUsageListener();
+        new RegenPlayerInterventionListener();
+        new RegenCommand();
         RegenHeartbeat.startBeating();
-//        ActiveBrush.pruneHeartbeat();
-//        BrushExecution.heartbeat();
-//        RegenPlayerInterventionMonitor.heartbeat();
+        ActiveBrush.pruneHeartbeat();
+        BrushExecution.heartbeat();
+        RegenPlayerInterventionMonitor.heartbeat();
     }
 
 

@@ -65,17 +65,13 @@ public class RegenSectionManager {
         synchronized (SECTION_INFOS_SYNC) {
             if (sectionInfos.isEmpty()) return;
             double totalSadness = 0;
-            int sadnessCount = 0;
             for (RegenSectionInfo sectionInfo : sectionInfos.values()) {
-                sadnessCount += sectionInfo.oreSadnessCount();
                 final double sadness = sectionInfo.oreSadness();
-                totalSadness += sadness;
+                totalSadness += Math.max(0, sadness);
                 sadnesses.put(sectionInfo, sadness);
             }
-            System.out.println("total sadness " + totalSadness);
-            System.out.println("total sadnessCount " + sadnessCount);
-            final int sadness = Math.min(PluginOreRegen.REGEN_MAX_COUNT, (int) (totalSadness * PluginOreRegen.ORE_REGEN_MULTIPLIER * sadnessCount *
-                    Math.pow(random.nextDouble(), 1 / PluginOreRegen.ORE_REGEN_INTENSITY)
+            final int sadness = Math.min(PluginOreRegen.REGEN_MAX_COUNT, (int) (totalSadness * PluginOreRegen.ORE_REGEN_MULTIPLIER *
+                    Math.pow(random.nextDouble(), -1 / PluginOreRegen.ORE_REGEN_INTENSITY)
             ));
             double[] sadnessChoices = new double[sadness];
             for (int i = 0; i < sadnessChoices.length; i++) {
@@ -90,18 +86,24 @@ public class RegenSectionManager {
             Map.Entry<RegenSectionInfo, Double> currentSection = iterator.next();
             double offset = 0;
             for (int i = 0; i < sadnessChoices.length; i++) {
+                if (currentSection.getValue() < 0) {
+                    if (iterator.hasNext()) {
+                        currentSection = iterator.next();
+                        continue;
+                    } else break;
+                }
                 double currentSadnessValue = sadnessChoices[i];
-                if (currentSadnessValue - offset > currentSection.getValue()) {
+                if (currentSadnessValue - offset <= currentSection.getValue()) {
+                    // stay here and make ppl more sad
+                    currentSection.getKey().randomOreTodoIncrement();
+                } else {
                     // go to the next sad ppl
                     if (iterator.hasNext()) {
                         currentSection = iterator.next();
                     } else break;
                     i--;
-                } else {
-                    // stay here and make ppl more sad
-                    currentSection.getKey().randomOreTodoIncrement();
+                    offset += currentSadnessValue;
                 }
-                offset += currentSadnessValue;
             }
         }
         for (RegenSectionInfo sectionInfo : sadnesses.keySet()) {
@@ -116,12 +118,12 @@ public class RegenSectionManager {
             double totalSadness = 0;
             for (RegenSectionInfo sectionInfo : sectionInfos.values()) {
                 final double sadness = sectionInfo.airSadness();
-                totalSadness += sadness;
+                totalSadness += Math.max(0, sadness);
                 sadnesses.put(sectionInfo, sadness);
             }
             double[] sadnessChoices = new double[
                     Math.min(PluginOreRegen.REGEN_MAX_COUNT, (int) (totalSadness * PluginOreRegen.AIR_REGEN_MULTIPLIER *
-                            Math.pow(random.nextDouble(), -PluginOreRegen.AIR_REGEN_INTENSITY)
+                            Math.pow(random.nextDouble(), -1 / PluginOreRegen.AIR_REGEN_INTENSITY)
                     ))];
             for (int i = 0; i < sadnessChoices.length; i++) {
                 sadnessChoices[i] = random.nextDouble() * totalSadness;
@@ -132,18 +134,24 @@ public class RegenSectionManager {
             Map.Entry<RegenSectionInfo, Double> currentSection = iterator.next();
             double offset = 0;
             for (int i = 0; i < sadnessChoices.length; i++) {
+                if (currentSection.getValue() < 0) {
+                    if (iterator.hasNext()) {
+                        currentSection = iterator.next();
+                        continue;
+                    } else break;
+                }
                 double currentSadnessValue = sadnessChoices[i];
-                if (currentSadnessValue - offset > currentSection.getValue()) {
+                if (currentSadnessValue - offset <= currentSection.getValue()) {
+                    // stay here and make ppl more sad
+                    currentSection.getKey().randomAirTodoIncrement();
+                } else {
                     // go to the next sad ppl
                     if (iterator.hasNext()) {
                         currentSection = iterator.next();
                     } else break;
                     i--;
-                } else {
-                    // stay here and make ppl more sad
-                    currentSection.getKey().randomAirTodoIncrement();
+                    offset += currentSadnessValue;
                 }
-                offset += currentSadnessValue;
             }
         }
         for (RegenSectionInfo sectionInfo : sadnesses.keySet()) {

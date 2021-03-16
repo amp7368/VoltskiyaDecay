@@ -135,7 +135,6 @@ public class DBPlayerBlock {
                         z - PluginOreRegen.SUPPORT_RADIUS,
                         z + PluginOreRegen.SUPPORT_RADIUS
                 );
-                System.out.println(sql);
                 statement.addBatch(sql);
                 statement.close();
                 sql = String.format(
@@ -152,7 +151,6 @@ public class DBPlayerBlock {
                         Z,
                         z
                 );
-                System.out.println(sql);
                 statement.addBatch(sql);
             }
             statement.executeBatch();

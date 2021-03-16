@@ -86,7 +86,6 @@ public class DBUtils {
     }
 
     public static int getMyBlockUid(@NotNull Material blockName) throws SQLException {
-        if (blockName == null) throw new SQLException("likawejrlkw");
         synchronized (blockNameToMy) {
             Integer my = blockNameToMy.get(blockName);
             if (my != null) return my;

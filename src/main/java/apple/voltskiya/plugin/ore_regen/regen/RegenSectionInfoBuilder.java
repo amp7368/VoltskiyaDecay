@@ -49,7 +49,7 @@ public class RegenSectionInfoBuilder {
         totalDistributionSum = 0;
         for (Integer i : hostBlocks.values()) totalDistributionSum += i;
         for (Map.Entry<Integer, Integer> entry : hostBlocks.entrySet()) {
-            hostBlockDistribution.put(DBUtils.getBlockName(entry.getKey()), ((double) entry.getValue()) / totalDistributionSum);
+            hostBlockDistribution.put(DBUtils.getBlockName(entry.getKey()), totalDistributionSum == 0 ? 0 : ((double) entry.getValue()) / totalDistributionSum);
         }
 
         return new RegenSectionInfo(actualBlockCountReal, hostBlockDistribution, veinSizesProbability, desiredBlockDistributionPerc, uid);

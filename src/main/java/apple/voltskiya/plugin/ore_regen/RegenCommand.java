@@ -3,17 +3,24 @@ package apple.voltskiya.plugin.ore_regen;
 import apple.voltskiya.plugin.Permissions;
 import apple.voltskiya.plugin.VoltskiyaPlugin;
 import apple.voltskiya.plugin.ore_regen.brush.ActiveBrush;
+import apple.voltskiya.plugin.ore_regen.brush.Coords;
 import apple.voltskiya.plugin.ore_regen.gui.InventoryRegenBox;
 import apple.voltskiya.plugin.ore_regen.gui.RegenConfigInstance;
 import apple.voltskiya.plugin.ore_regen.regen.RegenHeartbeat;
+import apple.voltskiya.plugin.ore_regen.sql.DBRegen;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.CommandPermission;
 import co.aikar.commands.annotation.Subcommand;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.Nullable;
+
+import java.sql.SQLException;
+import java.util.List;
 
 import static apple.voltskiya.plugin.ore_regen.PluginOreRegen.*;
 
@@ -96,34 +103,56 @@ public class RegenCommand extends BaseCommand {
         }
     }
 
-    @Subcommand("interval")
-    public class Interval extends BaseCommand {
-        @Subcommand("set")
-        public void setInterval(Player player, long val) {
-            player.sendMessage(String.valueOf(REGEN_INTERVAL = val));
+    @Subcommand("settings")
+    public class Settings extends BaseCommand {
+        @Subcommand("interval")
+        public class Interval extends BaseCommand {
+            @Subcommand("set")
+            public void setInterval(Player player, long val) {
+                player.sendMessage(String.valueOf(REGEN_INTERVAL = val));
+            }
+
+            @Subcommand("get")
+            public void getInterval(Player player) {
+                player.sendMessage(String.valueOf(REGEN_INTERVAL));
+            }
         }
 
-        @Subcommand("get")
-        public void getInterval(Player player) {
-            player.sendMessage(String.valueOf(REGEN_INTERVAL));
-        }
-    }@Subcommand("maxcount")
-    public class MaxCount extends BaseCommand {
-        @Subcommand("set")
-        public void setInterval(Player player, int val) {
-            player.sendMessage(String.valueOf(REGEN_MAX_COUNT = val));
-        }
+        @Subcommand("maxcount")
+        public class MaxCount extends BaseCommand {
+            @Subcommand("set")
+            public void setInterval(Player player, int val) {
+                player.sendMessage(String.valueOf(REGEN_MAX_COUNT = val));
+            }
 
-        @Subcommand("get")
-        public void getInterval(Player player) {
-            player.sendMessage(String.valueOf(REGEN_MAX_COUNT));
+            @Subcommand("get")
+            public void getInterval(Player player) {
+                player.sendMessage(String.valueOf(REGEN_MAX_COUNT));
+            }
+        }
+    }
+
+    @Subcommand("highlight")
+    public void highlight(int toolUid) {
+        try {
+            List<Coords> coords = DBRegen.getAllBlocks(toolUid);
+            for (Coords coord : coords) {
+                Bukkit.getWorld(coord.worldUID).getBlockAt(coord.x, coord.y, coord.z).setType(Material.EMERALD_BLOCK);
+            }
+            Bukkit.getScheduler().scheduleSyncDelayedTask(VoltskiyaPlugin.get(), () -> {
+                for (Coords coord : coords) {
+                    Bukkit.getWorld(coord.worldUID).getBlockAt(coord.x, coord.y, coord.z).setType(coord.lastBlock);
+                }
+            }, 300);
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
         }
     }
 
     @Subcommand("brush")
     public class RegenBrushCommand extends BaseCommand {
         @Subcommand("destory")
-        public void destory(Player player){
+        public void destory(Player player) {
             ItemMeta meta = player.getInventory().getItemInMainHand().getItemMeta();
             if (meta == null) {
                 player.sendMessage("There is nothing in your hand");
@@ -139,11 +168,12 @@ public class RegenCommand extends BaseCommand {
                 player.sendMessage("You're not holding a valid powertool");
                 return;
             }
-            new Thread(()->{
+            new Thread(() -> {
                 brush.destoryBlocks();
                 player.sendMessage("I've destroyed it D:");
             }).start();
         }
+
         @Subcommand("create")
         public void createRegenInv(Player player) {
             player.openInventory(new InventoryRegenBox().getInventory());
@@ -179,7 +209,7 @@ public class RegenCommand extends BaseCommand {
                     brush.markAll(marking, () -> player.sendMessage(
                             marking ? "I've marked all your painted locations" :
                                     "I've painted and fully unmarked your marked locations"
-                    )
+                            )
                     )
             ).start();
         }

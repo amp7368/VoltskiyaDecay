@@ -2,7 +2,6 @@ package apple.voltskiya.plugin.ore_regen.regen;
 
 import apple.voltskiya.plugin.VoltskiyaPlugin;
 import org.bukkit.Bukkit;
-
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static apple.voltskiya.plugin.ore_regen.PluginOreRegen.REGEN_INTERVAL;

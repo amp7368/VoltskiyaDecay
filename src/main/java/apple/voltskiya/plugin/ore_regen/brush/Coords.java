@@ -16,13 +16,17 @@ public class Coords {
     public Material lastBlock;
     public UUID worldUID;
 
-    public Coords(int x, int y, int z, UUID worldUID, Material markerBlock, Material lastBlock) {
+    public Coords(int x, int y, int z, UUID worldUID, Material newBlock, Material lastBlock) {
         this.x = x;
         this.y = y;
         this.z = z;
         this.worldUID = worldUID;
-        this.newBlock = markerBlock;
+        this.newBlock = newBlock;
         this.lastBlock = lastBlock;
+    }
+
+    public CoordsWithUID convertToWithUID() throws SQLException {
+        return new CoordsWithUID(this);
     }
 
     public static class CoordsWithUID extends Coords {
@@ -36,6 +40,13 @@ public class Coords {
 
         public CoordsWithUID(int x, int y, int z, int worldUID, Material markerBlock, int lastBlock) {
             super(x, y, z, null, markerBlock, null);
+            this.myWorldUID = worldUID;
+            this.myLastBlockUid = lastBlock;
+        }
+
+        private CoordsWithUID(Coords block) throws SQLException {
+            super(block.x, block.y, block.z, block.worldUID, block.newBlock, block.lastBlock);
+            updateBlockAndWorld();
         }
 
         public void updateBlockAndWorld() throws SQLException {
@@ -53,5 +64,30 @@ public class Coords {
             World world = Bukkit.getWorld(worldUID);
             if (world != null) world.getBlockAt(x, y, z).setType(marking ? newBlock : lastBlock);
         }
+    }
+
+    @Override
+    public int hashCode() {
+        long hash = 0;
+        hash += x;
+        hash += y;
+        hash += z;
+        hash += worldUID.hashCode();
+        return (int) (hash % Integer.MAX_VALUE);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Coords) {
+            Coords other = (Coords) obj;
+            return x == other.x && y == other.y && z == other.z && worldUID.equals(other.worldUID);
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s -> [%d,%d,%d] -> %s", lastBlock.name(), x, y, z, newBlock.name());
     }
 }

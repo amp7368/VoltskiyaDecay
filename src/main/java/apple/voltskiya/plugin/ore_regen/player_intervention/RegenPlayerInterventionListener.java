@@ -2,7 +2,6 @@ package apple.voltskiya.plugin.ore_regen.player_intervention;
 
 import apple.voltskiya.plugin.VoltskiyaPlugin;
 import apple.voltskiya.plugin.ore_regen.brush.Coords;
-import apple.voltskiya.plugin.ore_regen.sql.DBRegen;
 import com.destroystokyo.paper.event.block.BlockDestroyEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -13,7 +12,6 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 
-import java.sql.SQLException;
 import java.util.UUID;
 
 public class RegenPlayerInterventionListener implements Listener {
@@ -40,7 +38,7 @@ public class RegenPlayerInterventionListener implements Listener {
         int y = block.getY();
         int z = block.getZ();
         UUID world = block.getWorld().getUID();
-        placeBlock(x, y, z, world, Material.AIR, block.getType());
+        placeBlock(x, y, z, world, block.getType(), Material.AIR);
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -66,5 +64,4 @@ public class RegenPlayerInterventionListener implements Listener {
     private void placeBlock(int x, int y, int z, UUID world, Material oldBlock, Material newBlock) {
         RegenPlayerInterventionMonitor.addTodo(new Coords(x, y, z, world, oldBlock, newBlock));
     }
-
 }
