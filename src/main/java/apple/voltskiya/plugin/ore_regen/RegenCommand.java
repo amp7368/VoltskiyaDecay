@@ -72,6 +72,19 @@ public class RegenCommand extends BaseCommand {
                 player.sendMessage(String.valueOf(ORE_REGEN_INTENSITY));
             }
         }
+
+        @Subcommand("randomness")
+        public class RandomnessCommand extends BaseCommand {
+            @Subcommand("set")
+            public void setIntensity(Player player, double val) {
+                player.sendMessage(String.valueOf(ORE_REGEN_RANDOMNESS = val));
+            }
+
+            @Subcommand("get")
+            public void getIntensity(Player player) {
+                player.sendMessage(String.valueOf(ORE_REGEN_RANDOMNESS));
+            }
+        }
     }
 
     @Subcommand("air")
@@ -99,6 +112,19 @@ public class RegenCommand extends BaseCommand {
             @Subcommand("get")
             public void getIntensity(Player player) {
                 player.sendMessage(String.valueOf(AIR_REGEN_INTENSITY));
+            }
+        }
+
+        @Subcommand("randomness")
+        public class RandomnessCommand extends BaseCommand {
+            @Subcommand("set")
+            public void setIntensity(Player player, double val) {
+                player.sendMessage(String.valueOf(AIR_REGEN_RANDOMNESS = val));
+            }
+
+            @Subcommand("get")
+            public void getIntensity(Player player) {
+                player.sendMessage(String.valueOf(AIR_REGEN_RANDOMNESS));
             }
         }
     }

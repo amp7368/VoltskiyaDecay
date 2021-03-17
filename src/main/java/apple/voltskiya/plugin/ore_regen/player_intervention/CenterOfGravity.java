@@ -89,15 +89,15 @@ public class CenterOfGravity {
     }
 
     public long getSdx() {
-        return sdx * 3;
+        return sdx * 4;
     }
 
     public long getSdy() {
-        return sdy * 3;
+        return sdy * 4;
     }
 
     public long getSdz() {
-        return sdz * 3;
+        return sdz * 4;
     }
 
     public boolean isInSD(Coords coord) {

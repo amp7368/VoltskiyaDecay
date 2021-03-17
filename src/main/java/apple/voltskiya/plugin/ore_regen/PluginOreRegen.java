@@ -9,6 +9,7 @@ import apple.voltskiya.plugin.ore_regen.player_intervention.RegenPlayerIntervent
 import apple.voltskiya.plugin.ore_regen.player_intervention.RegenPlayerInterventionMonitor;
 import apple.voltskiya.plugin.ore_regen.regen.RegenHeartbeat;
 import apple.voltskiya.plugin.ore_regen.regen.RegenSectionManager;
+import apple.voltskiya.plugin.ore_regen.sql.GhastFireball;
 import apple.voltskiya.plugin.ore_regen.sql.VerifyRegenDB;
 
 
@@ -28,9 +29,11 @@ public class PluginOreRegen extends VoltskiyaModule {
     public static long REGEN_INTERVAL = 20;
 
     public static double ORE_REGEN_MULTIPLIER = 1;
-    public static double AIR_REGEN_MULTIPLIER = 1;
-    public static double ORE_REGEN_INTENSITY = .5;
-    public static double AIR_REGEN_INTENSITY = .5;
+    public static double ORE_REGEN_INTENSITY = 3;
+    public static double ORE_REGEN_RANDOMNESS = 2;
+    public static double AIR_REGEN_MULTIPLIER = 10;
+    public static double AIR_REGEN_INTENSITY = 3;
+    public static double AIR_REGEN_RANDOMNESS = 2;
 
     @Override
     public void enable() {

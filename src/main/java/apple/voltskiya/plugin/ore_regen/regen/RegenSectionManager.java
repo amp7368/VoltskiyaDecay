@@ -11,7 +11,6 @@ import java.util.*;
 public class RegenSectionManager {
     private final static Random random = new Random();
     private static Map<Long, RegenSectionInfo> sectionInfos = new HashMap<>();
-    private static long totalBlocks = 0;
     private final static Object SECTION_INFOS_SYNC = new Object();
 
     static {
@@ -25,8 +24,6 @@ public class RegenSectionManager {
         for (RegenSectionInfo sectionInfo : sectionInfos1) {
             sectionInfos.put(sectionInfo.getUid(), sectionInfo);
         }
-        for (RegenSectionInfo sectionInfo : sectionInfos.values())
-            totalBlocks += sectionInfo.getTotalActualBlocks();
     }
 
     // make sure the static block is done
@@ -47,15 +44,11 @@ public class RegenSectionManager {
                     sectionInfos1 = new HashSet<>();
                 }
                 sectionInfos = new HashMap<>();
-                totalBlocks = 0;
                 for (RegenSectionInfo sInfo : sectionInfos1) {
                     sectionInfos.put(sInfo.getUid(), sInfo);
-                    totalBlocks += sInfo.getTotalActualBlocks();
                 }
             } else {
-                totalBlocks -= sectionInfo.getTotalActualBlocks();
                 sectionInfo.update(blocks);
-                totalBlocks += sectionInfo.getTotalActualBlocks();
             }
         }
     }
@@ -70,10 +63,13 @@ public class RegenSectionManager {
                 totalSadness += Math.max(0, sadness);
                 sadnesses.put(sectionInfo, sadness);
             }
-            final int sadness = Math.min(PluginOreRegen.REGEN_MAX_COUNT, (int) (totalSadness * PluginOreRegen.ORE_REGEN_MULTIPLIER *
-                    Math.pow(random.nextDouble(), -1 / PluginOreRegen.ORE_REGEN_INTENSITY)
-            ));
-            double[] sadnessChoices = new double[sadness];
+            final double r = random.nextDouble();
+            //x^(1/3)*100*r^(r*2)
+            int size = (int) Math.min(PluginOreRegen.REGEN_MAX_COUNT,
+                    Math.pow(totalSadness, 1d / (PluginOreRegen.ORE_REGEN_INTENSITY))
+                            * PluginOreRegen.ORE_REGEN_MULTIPLIER *
+                            Math.pow(r, PluginOreRegen.ORE_REGEN_RANDOMNESS * r));
+            double[] sadnessChoices = new double[size];
             for (int i = 0; i < sadnessChoices.length; i++) {
                 sadnessChoices[i] = random.nextDouble() * totalSadness;
             }
@@ -89,6 +85,7 @@ public class RegenSectionManager {
                 if (currentSection.getValue() < 0) {
                     if (iterator.hasNext()) {
                         currentSection = iterator.next();
+                        i--;
                         continue;
                     } else break;
                 }
@@ -102,7 +99,7 @@ public class RegenSectionManager {
                         currentSection = iterator.next();
                     } else break;
                     i--;
-                    offset += currentSadnessValue;
+                    offset += currentSection.getValue();
                 }
             }
         }
@@ -117,14 +114,17 @@ public class RegenSectionManager {
             if (sectionInfos.isEmpty()) return;
             double totalSadness = 0;
             for (RegenSectionInfo sectionInfo : sectionInfos.values()) {
-                final double sadness = sectionInfo.airSadness();
-                totalSadness += Math.max(0, sadness);
+                final double sadness = Math.max(0, sectionInfo.airSadness());
+                totalSadness += sadness;
                 sadnesses.put(sectionInfo, sadness);
             }
-            double[] sadnessChoices = new double[
-                    Math.min(PluginOreRegen.REGEN_MAX_COUNT, (int) (totalSadness * PluginOreRegen.AIR_REGEN_MULTIPLIER *
-                            Math.pow(random.nextDouble(), -1 / PluginOreRegen.AIR_REGEN_INTENSITY)
-                    ))];
+            final double r = random.nextDouble();
+            //x^(1/3)*100*r^(r*2)
+            int size = (int) Math.min(PluginOreRegen.REGEN_MAX_COUNT,
+                    Math.pow(totalSadness, 1d / (PluginOreRegen.AIR_REGEN_INTENSITY))
+                            * PluginOreRegen.AIR_REGEN_MULTIPLIER *
+                            Math.pow(r, PluginOreRegen.AIR_REGEN_RANDOMNESS * r));
+            double[] sadnessChoices = new double[size];
             for (int i = 0; i < sadnessChoices.length; i++) {
                 sadnessChoices[i] = random.nextDouble() * totalSadness;
             }
@@ -137,6 +137,7 @@ public class RegenSectionManager {
                 if (currentSection.getValue() < 0) {
                     if (iterator.hasNext()) {
                         currentSection = iterator.next();
+                        i--;
                         continue;
                     } else break;
                 }
@@ -150,7 +151,7 @@ public class RegenSectionManager {
                         currentSection = iterator.next();
                     } else break;
                     i--;
-                    offset += currentSadnessValue;
+                    offset += currentSection.getValue();
                 }
             }
         }

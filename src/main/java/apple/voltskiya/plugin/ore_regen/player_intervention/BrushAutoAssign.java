@@ -14,6 +14,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class BrushAutoAssign {
+    private static final long RADIUS_LATER_MAX = 13;
     private static final int RADIUS_MAX = 4;
     private static final Map<BrushSelection, List<Coords>> coordsToAdd = new HashMap<>();
     private static final AtomicBoolean isBusyCreatingSelection = new AtomicBoolean(false);
@@ -158,12 +159,12 @@ public class BrushAutoAssign {
         }
         // find the new center of mass
         CenterOfGravity centerOfGravity = new CenterOfGravity(nearbyBlocks, coord);
-        final int minX = (int) (centerOfGravity.getMeanX() - centerOfGravity.getSdx());
-        final int minY = (int) (centerOfGravity.getMeanY() - centerOfGravity.getSdy());
-        final int minZ = (int) (centerOfGravity.getMeanZ() - centerOfGravity.getSdz());
-        final int maxX = (int) (centerOfGravity.getMeanX() + centerOfGravity.getSdx());
-        final int maxY = (int) (centerOfGravity.getMeanY() + centerOfGravity.getSdy());
-        final int maxZ = (int) (centerOfGravity.getMeanZ() + centerOfGravity.getSdz());
+        final int minX = (int) (centerOfGravity.getMeanX() - RADIUS_LATER_MAX);
+        final int minY = (int) (centerOfGravity.getMeanY() - RADIUS_LATER_MAX);
+        final int minZ = (int) (centerOfGravity.getMeanZ() - RADIUS_LATER_MAX);
+        final int maxX = (int) (centerOfGravity.getMeanX() + RADIUS_LATER_MAX);
+        final int maxY = (int) (centerOfGravity.getMeanY() + RADIUS_LATER_MAX);
+        final int maxZ = (int) (centerOfGravity.getMeanZ() + RADIUS_LATER_MAX);
         nearbyBlocks = new ArrayList<>();
         shouldWait.set(true);
         Bukkit.getScheduler().scheduleSyncDelayedTask(VoltskiyaPlugin.get(), () -> {

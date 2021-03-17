@@ -35,12 +35,17 @@ public class RegenPlayerInterventionMonitor {
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
             }
-            if (blocksToAssign == null) return;
+            if (blocksToAssign == null) {
+                return;
+            }
             blocksToAssign.removeIf(block -> block.lastBlock == Material.AIR); // remove if we're placing blocks
 
-            if (blocksToAssign.isEmpty()) return;
+            if (blocksToAssign.isEmpty()) {
+                impactToFix = new ArrayList<>();
+                return;
+            }
             try {
-                blocksToAssign = DBRegen.getNotAlreadyAssigned(blocksToAssign);
+                blocksToAssign = DBRegen.getNotAlreadyAssignedFromList(blocksToAssign);
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
             }
@@ -101,7 +106,6 @@ public class RegenPlayerInterventionMonitor {
             System.out.println("beatIntervention");
             synchronized (WRITING_TODO_SYNC_OBJECT) {
                 if (impactToFix.isEmpty()) {
-                    System.out.println("empty ");
                     isBusy.set(false);
                     return;
                 }

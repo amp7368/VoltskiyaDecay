@@ -15,6 +15,7 @@ import apple.voltskiya.plugin.utils.Pair;
 import apple.voltskiya.plugin.utils.Triple;
 import org.bukkit.Material;
 import org.bukkit.block.BlockState;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.CheckReturnValue;
@@ -110,6 +111,7 @@ public class DBRegen {
     }
 
     public static long saveConfig(RegenConfigInstance config) throws SQLException {
+        DBLogging.log(DBLogging.DBRegen, "Save config");
         synchronized (VerifyDecayDB.syncDB) {
             Statement statement = VerifyRegenDB.database.createStatement();
             ResultSet response = statement.executeQuery(GET_NEXT_TOOL_UID);
@@ -121,15 +123,16 @@ public class DBRegen {
             preparedStatement.setInt(3, config.brushRadius);
             preparedStatement.execute();
 
+            preparedStatement.close();
             for (Map.Entry<Integer, Integer> block : config.getHostBlockToCount()) {
                 preparedStatement = VerifyRegenDB.database.prepareStatement(INSERT_TOOL_HOST_BLOCK);
                 preparedStatement.setLong(1, uid);
                 preparedStatement.setInt(2, block.getKey());
                 preparedStatement.setInt(3, block.getValue());
                 preparedStatement.execute();
+                preparedStatement.close();
             }
             preparedStatement.close();
-
 
             for (Map.Entry<Integer, List<Integer>> block : config.getVeinSizeBlockToCount()) {
                 statement = VerifyRegenDB.database.createStatement();
@@ -142,6 +145,7 @@ public class DBRegen {
                     preparedStatement.setInt(3, index++);
                     preparedStatement.setInt(4, count);
                     preparedStatement.execute();
+                    preparedStatement.close();
                 }
             }
 
@@ -151,6 +155,7 @@ public class DBRegen {
                 preparedStatement.setInt(2, block.getKey());
                 preparedStatement.setInt(3, block.getValue());
                 preparedStatement.execute();
+                preparedStatement.close();
             }
 
             return uid;
@@ -159,6 +164,7 @@ public class DBRegen {
 
     @Nullable
     public static ActiveBrush getBrush(long uid) throws SQLException {
+        DBLogging.log(DBLogging.DBRegen, "Get brush");
         synchronized (VerifyDecayDB.syncDB) {
             Statement statement = VerifyRegenDB.database.createStatement();
             ResultSet response = statement.executeQuery(String.format(GET_SINGLE_TOOL_INFO, uid));
@@ -184,7 +190,8 @@ public class DBRegen {
         }
     }
 
-    public static void regenOre(long uid, RegenSectionInfo.OreVein[] oreChoices) throws SQLException {
+    public static void findRegenOre(long uid, RegenSectionInfo.OreVein[] oreChoices) throws SQLException {
+        DBLogging.log(DBLogging.DBRegen, "FindRegenOre");
         Runnable runAfter;
         synchronized (VerifyDecayDB.syncDB) {
             int air = DBUtils.getMyAir();
@@ -194,6 +201,7 @@ public class DBRegen {
                             "SELECT *\n" +
                                     "FROM %s as %s\n" +
                                     "WHERE %s.%s = false " +
+                                    "AND NOT %s = %%d\n" +
                                     "AND %s = %%d\n" +
                                     "ORDER BY random()\n" +
                                     "LIMIT %%d",
@@ -201,6 +209,7 @@ public class DBRegen {
                             MINE,
                             MINE,
                             IS_ORE,
+                            BLOCK_NAME,
                             TOOL_UID
                     ), air, uid, oreChoices.length
             ));
@@ -215,6 +224,7 @@ public class DBRegen {
                 int blockType = response.getInt(BLOCK_NAME);
                 oreChoices[i++].setCoords(x, y, z, myWorldUid, blockType);
             }
+            statement.close();
             for (RegenSectionInfo.OreVein oreChoice : oreChoices) {
                 if (oreChoice != null) oreChoice.updateWorldAndBlock();
             }
@@ -223,7 +233,8 @@ public class DBRegen {
         runAfter.run();
     }
 
-    public static void regenAir(long uid, RegenSectionInfo.OreVein[] oreChoices) throws SQLException {
+    public static void findRegenAir(long uid, RegenSectionInfo.OreVein[] oreChoices) throws SQLException {
+        DBLogging.log(DBLogging.DBRegen, "FindRegenAir");
         synchronized (VerifyDecayDB.syncDB) {
             int air = DBUtils.getMyAir();
             Statement statement = VerifyRegenDB.database.createStatement();
@@ -260,7 +271,8 @@ public class DBRegen {
             ResultSet response = statement.executeQuery(sql);
             int index = 0;
             while (response.next()) {
-                if (oreChoices[index] == null || index == oreChoices.length - 1) break;
+                System.out.println("response.next");
+                if (index == oreChoices.length || oreChoices[index] == null) break;
                 oreChoices[index++].setCoords(
                         response.getInt(X),
                         response.getInt(Y),
@@ -268,8 +280,12 @@ public class DBRegen {
                         response.getInt(WORLD_UUID),
                         air
                 );
+                System.out.println(
+                        response.getInt(X) + ", " +
+                                response.getInt(Y) + ", " +
+                                response.getInt(Z) + ", " +
+                                response.getInt(WORLD_UUID));
             }
-            response.close();
             statement.close();
             for (RegenSectionInfo.OreVein oreChoice : oreChoices) {
                 if (oreChoice != null) oreChoice.updateWorldAndBlock();
@@ -278,6 +294,7 @@ public class DBRegen {
     }
 
     public static void setMarked(Map<Long, List<Coords.CoordsWithUID>> allCoords, boolean marking) throws SQLException {
+        DBLogging.log(DBLogging.DBRegen, "SetMarked");
         List<Runnable> runAfter = new ArrayList<>();
         synchronized (VerifyDecayDB.syncDB) {
             VerifyRegenDB.database.setAutoCommit(false);
@@ -325,6 +342,7 @@ public class DBRegen {
      */
     @CheckReturnValue
     private static Runnable updateSectionInfoDB(long toolUid) throws SQLException {
+        DBLogging.log(DBLogging.DBRegen, "Update Section Info");
         Map<Material, Integer> blocks = new HashMap<>();
         synchronized (VerifyDecayDB.syncDB) {
             Map<Integer, Integer> myBlockUids = new HashMap<>();
@@ -364,14 +382,16 @@ public class DBRegen {
                         )
                 );
             }
+            statement.close();
             for (Map.Entry<Integer, Integer> block : myBlockUids.entrySet())
                 blocks.put(DBUtils.getBlockName(block.getKey()), block.getValue());
         }
         return () -> RegenSectionManager.updateSectionInfo(toolUid, blocks);
     }
 
-    public static void setOre(long uid, int x, int y, int z, UUID worldUID, Material blockType, Material
+    public static void setBlockToRegen(long uid, int x, int y, int z, UUID worldUID, Material blockType, Material
             oldBlockType, boolean isOre) throws SQLException {
+        DBLogging.log(DBLogging.DBRegen, "Set single block to regen");
         synchronized (VerifyDecayDB.syncDB) {
             int myNewBlockUid = DBUtils.getMyBlockUid(blockType);
             int myOldBlockUid = DBUtils.getMyBlockUid(oldBlockType);
@@ -393,12 +413,9 @@ public class DBRegen {
                             SECTION_INFO_TABLE, TOOL_UID, BLOCK_NAME, BLOCK_COUNT, TOOL_UID, BLOCK_NAME, BLOCK_COUNT, BLOCK_COUNT
                     ), uid, myOldBlockUid
             ));
-            if (blockType == Material.AIR) {
-                throw new IllegalArgumentException("fuck");
-            }
             statement.execute(String.format(
                     String.format("UPDATE %s\n" +
-                                    "SET %s = %%b, %s = true, %s = %%d,  %s = %%d\n" +
+                                    "SET %s = false, %s = %%b, %s = %%d,  %s = %%d\n" +
                                     "WHERE %s = %%d AND %s = %%d AND %s = %%d AND %s = %%d",
                             SECTION_TO_BLOCK_TABLE,
                             IS_MARKED,
@@ -418,6 +435,7 @@ public class DBRegen {
                     z,
                     myWorldUid
             ));
+            statement.close();
         }
     }
 
@@ -428,14 +446,15 @@ public class DBRegen {
      * @return the blocks that don't belong to a section
      * @throws SQLException shouldn't be thrown
      */
+    @NotNull
     public static List<Coords> setBlock(Collection<Coords> blocksToUpdate) throws SQLException {
+        DBLogging.log(DBLogging.DBRegen, "set Block");
         List<Coords> blocksToAssign = new ArrayList<>();
         List<Runnable> updateSectionsRunnables = new ArrayList<>();
         synchronized (VerifyDecayDB.syncDB) {
             Statement statement = VerifyRegenDB.database.createStatement();
             Set<Integer> toolIdsToRecount = new HashSet<>();
             for (Coords blockToUpdate : blocksToUpdate) {
-                int myOldBlockUid = DBUtils.getMyBlockUid(blockToUpdate.lastBlock);
                 int myNewBlockUid = DBUtils.getMyBlockUid(blockToUpdate.newBlock);
                 int myWorldUid = DBUtils.getMyWorldUid(blockToUpdate.worldUID.toString());
                 ResultSet response = statement.executeQuery(
@@ -470,19 +489,21 @@ public class DBRegen {
                         blockToUpdate.z,
                         myWorldUid
                 ));
-                // update the toolIds section info
-                for (Integer toolId : toolIdsToRecount) {
-                    updateSectionsRunnables.add(updateSectionInfoDB(toolId));
-                }
+                statement.close();
+
+            }// update the toolIds section info
+            for (Integer toolId : toolIdsToRecount) {
+                updateSectionsRunnables.add(updateSectionInfoDB(toolId));
             }
-            for (Runnable update : updateSectionsRunnables) {
-                update.run();
-            }
-            return blocksToAssign;
         }
+        for (Runnable update : updateSectionsRunnables) {
+            update.run();
+        }
+        return blocksToAssign;
     }
 
     public static List<Coords.CoordsWithUID> getAndUpdateMarking(long uid, boolean marking) throws SQLException {
+        DBLogging.log(DBLogging.DBRegen, "Get and Update Marking");
         Runnable runAfter;
         List<Coords.CoordsWithUID> coords = new ArrayList<>();
         synchronized (VerifyDecayDB.syncDB) {
@@ -508,6 +529,7 @@ public class DBRegen {
     }
 
     public static Set<RegenSectionInfo> getSections() throws SQLException {
+        DBLogging.log(DBLogging.DBRegen, "Get Sections");
         Map<Long, RegenSectionInfoBuilder> regenSectionInfoBuilders = new HashMap<>();
         Set<RegenSectionInfo> regenSectionInfos = new HashSet<>();
         synchronized (VerifyDecayDB.syncDB) {
@@ -548,6 +570,7 @@ public class DBRegen {
     }
 
     public static List<Coords.CoordsWithUID> destroyBlocks(long toolUid) throws SQLException {
+        DBLogging.log(DBLogging.DBRegen, "Destroy blocks");
         List<Coords.CoordsWithUID> coords = new ArrayList<>();
         Runnable runAfter;
         synchronized (VerifyDecayDB.syncDB) {
@@ -562,6 +585,7 @@ public class DBRegen {
             statement.execute(String.format(String.format("UPDATE %s\n" +
                     "SET %s = %%d\n" +
                     "WHERE %s = %%d;", SECTION_TO_BLOCK_TABLE, BLOCK_NAME, TOOL_UID), air, toolUid));
+            statement.close();
             for (Coords.CoordsWithUID coord : coords) {
                 coord.updateBlockAndWorld();
             }
@@ -571,7 +595,8 @@ public class DBRegen {
         return coords;
     }
 
-    public static List<Coords> getNotAlreadyAssigned(List<Coords> blocks) throws SQLException {
+    public static List<Coords> getNotAlreadyAssignedFromList(List<Coords> blocks) throws SQLException {
+        DBLogging.log(DBLogging.DBRegen, "Get not already assigned");
         Set<Coords> notAlreadyAssigned = new HashSet<>(blocks);
         synchronized (VerifyDecayDB.syncDB) {
             StringBuilder sql = new StringBuilder();
@@ -597,6 +622,7 @@ public class DBRegen {
                         response.getInt(Z)
                 )));
             }
+            statement.close();
             for (Pair<Integer, Triple<Integer, Integer, Integer>> xyz : xyzs) {
                 notAlreadyAssigned.remove(new Coords(
                         xyz.getValue().getX(), xyz.getValue().getY(), xyz.getValue().getZ(),
@@ -608,6 +634,7 @@ public class DBRegen {
     }
 
     public static List<BrushSelection> getNearbyCenters(Coords coord, int radiusToLook) throws SQLException {
+        DBLogging.log(DBLogging.DBRegen, "Get nearby centers");
         synchronized (VerifyDecayDB.syncDB) {
             Statement statement = VerifyRegenDB.database.createStatement();
             final String getMeanSql = String.format(String.format(
@@ -673,6 +700,7 @@ public class DBRegen {
     }
 
     public static void removeAlreadySelected(List<BlockState> blocks) throws SQLException {
+        DBLogging.log(DBLogging.DBRegen, "Blocks");
         synchronized (VerifyDecayDB.syncDB) {
             List<String> sql = new ArrayList<>();
             final int size = blocks.size();
@@ -720,6 +748,7 @@ public class DBRegen {
                         );
                 }
             }
+            statement.close();
             HashMap<Triple<Integer, Integer, Integer>, UUID> coordsOfSelectedWithWorld = new HashMap<>();
             for (Pair<Triple<Integer, Integer, Integer>, Integer> coords : coordsOfSelected) {
                 coordsOfSelectedWithWorld.put(
@@ -733,6 +762,7 @@ public class DBRegen {
     }
 
     public static void insertNewSelection(BrushSelectionBuilder selection) throws SQLException {
+        DBLogging.log(DBLogging.DBRegen, "Insert new selection");
         synchronized (VerifyDecayDB.syncDB) {
             List<String> insertSql = new ArrayList<>();
             insertSql.add(String.format(
@@ -754,6 +784,7 @@ public class DBRegen {
                     statement.addBatch(String.format(sql, toolId));
                 }
                 statement.executeBatch();
+                statement.close();
                 VerifyRegenDB.database.commit();
                 VerifyRegenDB.database.setAutoCommit(true);
                 updateSection = updateSectionInfoDB(toolId);
@@ -794,6 +825,7 @@ public class DBRegen {
     }
 
     public static List<Coords> getAllBlocks(int toolUid) throws SQLException {
+        DBLogging.log(DBLogging.DBRegen, "Get all blocks");
         synchronized (VerifyDecayDB.syncDB) {
             Statement statement = VerifyRegenDB.database.createStatement();
             ResultSet response = statement.executeQuery("SELECT * FROM main.section_to_block WHERE tool_uid = " + toolUid);
@@ -802,6 +834,7 @@ public class DBRegen {
                 coords.add(new Coords(response.getInt(X), response.getInt(Y), response.getInt(Z),
                         DBUtils.getRealWorldUid(response.getInt(WORLD_UUID)), null, DBUtils.getBlockName(response.getInt(BLOCK_NAME))));
             }
+            statement.close();
             return coords;
         }
     }

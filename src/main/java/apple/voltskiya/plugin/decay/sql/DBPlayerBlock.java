@@ -106,6 +106,7 @@ public class DBPlayerBlock {
                 statement.addBatch(sql);
             }
             statement.executeBatch();
+            statement.close();
             VerifyDecayDB.database.commit();
             VerifyDecayDB.database.setAutoCommit(true);
         }
@@ -154,6 +155,7 @@ public class DBPlayerBlock {
                 statement.addBatch(sql);
             }
             statement.executeBatch();
+            statement.close();
             VerifyDecayDB.database.commit();
             VerifyDecayDB.database.setAutoCommit(true);
         }

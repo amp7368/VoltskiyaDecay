@@ -41,6 +41,7 @@ public class DBUtils {
             ResultSet response = statement.executeQuery(String.format(String.format("SELECT %s FROM %s WHERE %s = '%%s'",
                     MY_WORLD_UID, WORLD_UID_TO_MY_UID_TABLE, REAL_WORLD_UID), worldUid));
             final int my = response.getInt(MY_WORLD_UID);
+            statement.close();
             synchronized (realToMyWorld) {
                 realToMyWorld.put(UUID.fromString(worldUid), my);
             }
@@ -59,6 +60,7 @@ public class DBUtils {
                     REAL_WORLD_UID, WORLD_UID_TO_MY_UID_TABLE, MY_WORLD_UID), myWorldUid));
 
             UUID real = UUID.fromString(response.getString(REAL_WORLD_UID));
+            statement.close();
             synchronized (myToRealWorld) {
                 myToRealWorld.put(myWorldUid, real);
             }
@@ -80,6 +82,7 @@ public class DBUtils {
                     MY_BLOCK_UID
             ), myBlockUid));
             final Material name = Material.valueOf(response.getString(BLOCK_NAME));
+            statement.close();
             myToBlockName.put(myBlockUid, name);
             return name;
         }
@@ -111,6 +114,7 @@ public class DBUtils {
                     BLOCK_NAME
             ), blockName));
             int my = response.getInt(MY_BLOCK_UID);
+            statement.close();
             blockNameToMy.put(blockName, my);
             return my;
         }

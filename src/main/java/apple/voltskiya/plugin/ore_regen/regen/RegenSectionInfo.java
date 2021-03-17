@@ -17,7 +17,8 @@ public class RegenSectionInfo {
     private static final Object ORE_SYNC = new Object();
     private static final Object AIR_SYNC = new Object();
     private Map<Material, Integer> actualBlockCount;
-    private long totalActualBlocks;
+    private long totalActualHostBlocks;
+    private long totalActualOreBlocks;
     private final Map<Material, Double> hostBlocks;
     private final Map<Material, VeinProbability> veinSizesProbability;
     private final Map<Material, Double> desiredBlockDistributionPerc;
@@ -32,21 +33,25 @@ public class RegenSectionInfo {
                             Map<Material, Double> desiredBlockDistributionPerc,
                             long uid) {
         this.actualBlockCount = actualBlockCount;
-        this.totalActualBlocks = 0;
-        for (Map.Entry<Material, Integer> count : actualBlockCount.entrySet()) {
-            if (count.getKey() != Material.AIR) this.totalActualBlocks += count.getValue();
-        }
         this.hostBlocks = hostBlocks;
         this.veinSizesProbability = veinSizesProbability;
         this.desiredBlockDistributionPerc = desiredBlockDistributionPerc;
         this.uid = uid;
+        this.totalActualHostBlocks = 0;
+        this.totalActualOreBlocks = 0;
+        for (Map.Entry<Material, Integer> count : actualBlockCount.entrySet()) {
+            if (count.getKey() != Material.AIR) {
+                if (hostBlocks.containsKey(count.getKey())) this.totalActualHostBlocks += count.getValue();
+                else this.totalActualOreBlocks += count.getValue();
+            }
+        }
     }
 
 
     public synchronized void update(Map<Material, Integer> blocks) {
-        this.totalActualBlocks = 0;
+        this.totalActualHostBlocks = 0;
         for (Map.Entry<Material, Integer> count : blocks.entrySet()) {
-            if (count.getKey() != Material.AIR) this.totalActualBlocks += count.getValue();
+            if (count.getKey() != Material.AIR) this.totalActualHostBlocks += count.getValue();
         }
         this.actualBlockCount = blocks;
     }
@@ -62,9 +67,9 @@ public class RegenSectionInfo {
         double sadness = 0;
         for (Material material : desiredBlockDistributionPerc.keySet()) {
             if (!hostBlocks.containsKey(material)) {
-                if (totalActualBlocks != 0) {
-                    sadness += desiredBlockDistributionPerc.get(material) -
-                            (((double) actualBlockCount.getOrDefault(material, 0)) / totalActualBlocks);
+                if (totalActualHostBlocks + totalActualOreBlocks != 0) {
+                    sadness += (((double) actualBlockCount.getOrDefault(material, 0) -
+                            desiredBlockDistributionPerc.get(material)) / (totalActualHostBlocks + totalActualOreBlocks));
                 }
             }
         }
@@ -86,15 +91,14 @@ public class RegenSectionInfo {
                 for (Pair<Material, Double> myDesire : weightedDesire) {
                     oreTypeChoice -= myDesire.getValue();
                     if (oreTypeChoice < 0) {
-                        oreChoices[index++] = new OreVein(myDesire.getKey(),true);
+                        oreChoices[index++] = new OreVein(myDesire.getKey(), true);
                         break;
                     }
                 }
             }
-
             this.randomOreTodo = 0;
             try {
-                DBRegen.regenOre(uid, oreChoices);
+                DBRegen.findRegenOre(uid, oreChoices);
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
             }
@@ -115,7 +119,7 @@ public class RegenSectionInfo {
     }
 
     public synchronized double airSadness() {
-        final long realTotal = totalActualBlocks + actualBlockCount.getOrDefault(Material.AIR, 0);
+        final long realTotal = totalActualHostBlocks + totalActualOreBlocks + actualBlockCount.getOrDefault(Material.AIR, 0);
         if (realTotal == 0) return 0;
         return ((double) actualBlockCount.getOrDefault(Material.AIR, 0)) / realTotal;
     }
@@ -135,19 +139,21 @@ public class RegenSectionInfo {
                 for (Pair<Material, Double> myDesire : weightedDesire) {
                     oreTypeChoice -= myDesire.getValue();
                     if (oreTypeChoice < 0) {
-                        oreChoices[index++] = new OreVein(myDesire.getKey(),false);
+                        oreChoices[index++] = new OreVein(myDesire.getKey(), false);
                         break;
                     }
                 }
             }
             this.randomAirTodo = 0;
             try {
-                DBRegen.regenAir(uid, oreChoices);
+                DBRegen.findRegenAir(uid, oreChoices);
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
             }
             for (OreVein ore : oreChoices) {
-                if (ore != null) ore.populateInit();
+                if (ore != null) {
+                    ore.populateInit();
+                }
             }
             Bukkit.getScheduler().scheduleSyncDelayedTask(VoltskiyaPlugin.get(), () -> {
                 for (OreVein ore : oreChoices) {
@@ -164,7 +170,7 @@ public class RegenSectionInfo {
                 desireAndReality.put(
                         entry.getKey(),
                         new Pair<>(
-                                ((double) actualBlockCount.getOrDefault(entry.getKey(), 0)) / totalActualBlocks,
+                                ((double) actualBlockCount.getOrDefault(entry.getKey(), 0)) / (totalActualHostBlocks + totalActualOreBlocks),
                                 entry.getValue()
                         )
                 );
@@ -179,9 +185,9 @@ public class RegenSectionInfo {
             desireAndReality.put(
                     entry.getKey(),
                     new Pair<>(
-                            totalActualBlocks == 0 ?
+                            totalActualHostBlocks == 0 ?
                                     0 :
-                                    ((double) actualBlockCount.getOrDefault(entry.getKey(), 0)) / totalActualBlocks,
+                                    ((double) actualBlockCount.getOrDefault(entry.getKey(), 0)) / totalActualHostBlocks,
                             entry.getValue()
                     )
             );
@@ -212,11 +218,6 @@ public class RegenSectionInfo {
         return weightedDesire;
     }
 
-    public long getTotalActualBlocks() {
-        return totalActualBlocks;
-    }
-
-
     public long getUid() {
         return uid;
     }
@@ -237,16 +238,16 @@ public class RegenSectionInfo {
         private int y = 0;
         private int z = 0;
         private UUID worldUid = null;
-        private boolean complete = false;
         private final List<Triple<Integer, Integer, Integer>> populateMe = new ArrayList<>();
         private int myWorldUid = -1;
         private Material blockType;
         private int myBlockType = -1;
         private Material oldBlockType = null;
         private int myOldBlockType = -1;
-        private boolean isOre;
+        private final boolean isOre;
+        private boolean complete = false;
 
-        public OreVein(Material blockType,boolean isOre) {
+        public OreVein(Material blockType, boolean isOre) {
             this.isOre = isOre;
             this.blockType = blockType;
             if (veinSizesProbability.containsKey(blockType)) {
@@ -276,7 +277,7 @@ public class RegenSectionInfo {
                 c.setY(c.getY() + y);
                 c.setZ(c.getZ() + z);
                 try {
-                    DBRegen.setOre(uid, c.getX(), c.getY(), c.getZ(), worldUid, blockType, oldBlockType,isOre);
+                    DBRegen.setBlockToRegen(uid, c.getX(), c.getY(), c.getZ(), worldUid, blockType, oldBlockType, isOre);
                 } catch (SQLException throwables) {
                     throwables.printStackTrace();
                 }
@@ -289,6 +290,7 @@ public class RegenSectionInfo {
             World world = Bukkit.getWorld(worldUid);
             if (world == null) return;
             if (!populateMe.isEmpty()) {
+                System.out.println("Populate [" + blockType.name() + "]at " + x + ", " + y + ", " + z);
                 for (Triple<Integer, Integer, Integer> c : populateMe) {
                     world.getBlockAt(c.getX(), c.getY(), c.getZ()).setType(blockType);
                 }
